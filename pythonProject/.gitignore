@@ -1,0 +1,7 @@
+Lib/
+Scripts/
+share/
+Include/
+.idea/
+venv/
+pyenv.cfg
