@@ -6,6 +6,7 @@ import easyocr
 import sys
 from toolbox import get_paths_files_with_extension_from_folder
 
+
 def compareLettre(lettre, tab):
     for k in range(len(tab)):
         if lettre == tab[k]:
@@ -68,21 +69,35 @@ def compare(texteOriginal, texteAlgo):  # prend en argument le texte original de
                 if cpt2 >= longueurOriginal:
                     cpt += 1
 
-    print("Nombre de lettres similaires = " + str(nbLettreSimilaire))
-    print("Nombre de lettres qui se ressemblent = " + str(lettreRessemblante))
-    print(str(nbLettreSimilaire / longueurOriginalInitiale * 100) + "%" + " de reussite")
+    print("Nombre de lettres similaires = {nb}".format(nb=nbLettreSimilaire))
+    print("Nombre de lettres qui se ressemblent = {nb}".format(nb=lettreRessemblante))
+    print("{pourcentage}% de réussite".format(pourcentage=nbLettreSimilaire / longueurOriginalInitiale * 100))
 
 
 if __name__ == "__main__":
+    # Initialisation
     reader = easyocr.Reader(['en'])  # need to run only once to load model into memory
-    result = reader.readtext(sys.argv[1])
-    liste = [x for elem in result for x in elem]
-
-    print("Image = " + str(sys.argv[1][:-4]))
-    print("Algo = " + str(liste[1]))
-
-    texte = list(liste[1])
-    compare(sys.argv[1][:-4], texte)
+    paths = get_paths_files_with_extension_from_folder('../Images/SVG', 'png')
+    for path in paths:
+        result = reader.readtext(path)
+        liste = [x for elem in result for x in elem]
+        # Extract name of file
+        path_array=path.split('/')
+        filename = path_array[-1:][0].replace('.png', '') # Last value of path_array(output is a 1 value array)
+        str = """\
+                ------------------------------------------------------------------------------------------------------------------
+                Path = {path}
+                Texte de l'image = {text}
+                """.format(path=path, text=filename)
+        if len(result) > 0:
+            str += "Resultat d'EasyOCR = {result}".format(result=liste)
+            if liste[1] == filename:
+                str += "Its a Match !!!"
+        else:
+            str += "Resultat d'EasyOCR = None"
+        print(str)
+        if len(result) > 0:
+            compare(liste[1], filename)
 
 # def evaluation():
 
