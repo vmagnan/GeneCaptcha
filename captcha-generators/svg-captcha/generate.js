@@ -1,43 +1,39 @@
 // Doc : https://github.com/produck/svg-captcha
-const fs = require('fs')
+
+const { request, json } = require('express')
+const express = require('express')
+const app = express()
 var svgCaptcha = require('svg-captcha');
-var nb = 10
 
-function generateNOfType(number, config) {
-    for (let i = 0; i < number; i++) {
-        var captcha = svgCaptcha.create(config);
-        console.log(captcha.text);
-        fs.writeFile('./' + config.size + '/Noise-' + config.noise + '/' + captcha.text + '.svg', captcha.data, (err) => {
-            if (err) throw err;
-            console.log('./' + config.size + '/Noise-' + config.noise + '/' + captcha.text + '.svg saved');
-        });
-    }
-}
-
-function createDirRecursive(path) {
-    fs.mkdir(path, { recursive: true }, (err) => {
-        if (err) {
-            throw err;
-        }
-        console.log("Directory " + path + " is created.");
-    });
-}
-var sizes = [20];
-var Myoptions = {
-    size: 1,
-    width: 150,
-    height: 50,
-    noise: 1,
-    color: true,
-    background: 'white',
+function generateCaptcha(text, bg_color) {
+    var options = {
+    width: 600,
+    height: 200,
+    noise: 0,
+    color: false,
     inverse: false,
     ignoreChars: '',
-    fontSize: 56,
+    fontSize: 128,
     charPreset: '',
-};
-
-for (i = 0; i < sizes.length; i++) {
-    Myoptions.size = sizes[i];
-    for (Myoptions.noise = 1; Myoptions.noise < 6; Myoptions.noise+=2)
-        generateNOfType(nb, Myoptions);
-  } 
+    };
+    if(arguments.length == 2)
+        options.background = bg_color;
+    var captcha = svgCaptcha(text, options);
+    console.log(captcha);
+    return captcha;
+}
+app.get('/captcha/:text', (req,res) => {
+    const text = req.params.text;
+    const captcha = generateCaptcha(text);
+    return res.status(200).json(captcha)
+})
+app.get('/captcha/:text/:color', (req,res) => {
+    const text = req.params.text;
+    const color = req.params.color;
+    const captcha = generateCaptcha(text,color);
+    return res.status(200).json(captcha)
+})
+app.listen(8080, () => {
+    console.log('Serveur de génération de captcha à l\'écoute');
+    console.log('Exemple de requête : http://localhost:8080/captcha/texte/couleur');
+  })
