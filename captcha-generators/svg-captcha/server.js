@@ -22,18 +22,36 @@ function generateCaptcha(text, bg_color) {
     console.log(captcha);
     return captcha;
 }
-app.get('/captcha/:text', (req,res) => {
-    const text = req.params.text;
-    const captcha = generateCaptcha(text);
-    return res.status(200).json(captcha)
-})
-app.get('/captcha/:text/:color', (req,res) => {
-    const text = req.params.text;
-    const color = req.params.color;
-    const captcha = generateCaptcha(text,color);
+app.get('/captcha', (req,res) => {
+    const text = req.query.text;
+    const color = req.query.color;
+    const font = req.query.font;
+    var captcha;
+    if(text != undefined)
+    {
+        if(font != undefined)
+            svgCaptcha.loadFont("./fonts/"+font);
+        else
+            console.log('pas de font');
+        if(color != undefined)
+        {
+            captcha = generateCaptcha(text,color);
+        }
+        else
+        {
+            console.log('pas de color');
+            captcha = generateCaptcha(text);
+        } 
+    }
+    else
+    {
+        console.log('pas de text');
+        exit;
+    }  
+    console.log("text ="+text+"|color = "+color+"|font= "+font);
     return res.status(200).json(captcha)
 })
 app.listen(8080, () => {
     console.log('Serveur de génération de captcha à l\'écoute');
-    console.log('Exemple de requête : http://localhost:8080/captcha/texte/couleur');
+    console.log('Exemple de requête : http://localhost:8080/captcha?text=blabla&color=blue&font=comicsansms.ttf');
   })
