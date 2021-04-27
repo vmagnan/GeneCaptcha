@@ -4,6 +4,8 @@ const { request, json } = require('express')
 const express = require('express')
 const app = express()
 var svgCaptcha = require('svg-captcha');
+const path = require("path")
+const fs = require("fs")
 
 function generateCaptcha(text, bg_color) {
     var options = {
@@ -50,6 +52,22 @@ app.get('/captcha', (req,res) => {
     }  
     console.log("text ="+text+"|color = "+color+"|font= "+font);
     return res.status(200).json(captcha)
+})
+app.get('/fonts', (req,res) => {
+    const directoryPath = path.join('./fonts')
+    let fonts = ""
+    fs.readdir(directoryPath, function(err, files) {
+    if (err) {
+        console.log("Error getting directory information.")
+        return res.status(404).json({})
+    } else {
+        files.forEach(function(file) {
+        fonts+=file+"/"
+        })
+        fonts = fonts.slice(0, -1)
+        return res.status(200).json(fonts)
+    }
+    })  
 })
 app.listen(8080, () => {
     console.log('Serveur de génération de captcha à l\'écoute');

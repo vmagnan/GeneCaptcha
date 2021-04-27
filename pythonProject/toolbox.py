@@ -4,8 +4,10 @@ To install cairoSVG please follow these instructions : https://cairosvg.org/docu
 import cairosvg
 import os
 from glob import glob
+import urllib
 import requests
 import time
+
 
 def svg_to_png(svg_path):
     """
@@ -35,26 +37,40 @@ def beautify_string(string):
 
 
 def get_new_captcha(path, /, **keywords):
-    print(keywords)
-    if 'text' in keywords:
-        if 'color' in keywords:
-            r = requests.get(
-                'http://localhost:8080/captcha/{text}/{color}'.format(text=keywords['text'], color=keywords['color']))
-        else:
-            r = requests.get(
-                'http://localhost:8080/captcha/{text}'.format(text=keywords['text']))
-
-    if r.status_code == 200:
-        byte_string = beautify_string(r.content.decode("utf8"))
-        cairosvg.svg2png(bytestring=byte_string, write_to=path + ".png")
-        return 0
+    """
+    Requête le serveur nodejs pour générer un captcha
+    Exemple d'appel : get_new_captcha("./coucou"+font, text="A38hCNp8", color="green", font=font)
+    :param path: Le chemin de l'image à sauvegarder (Ne pas spécifier l'extension)
+    :param keywords: Tableau de paramètres correspondant actuellement aux paramètres nommés : text, color et font.
+    :return: 0 = OK | 1 = Erreur
+    """
+    if len(keywords) > 0 and 'text' in keywords:
+        url = "http://localhost:8080/captcha?" + urllib.parse.urlencode(keywords)
+        print(url)
+        r = requests.get(url)
+        if r.status_code == 200:
+            byte_string = beautify_string(r.content.decode("utf8"))
+            cairosvg.svg2png(bytestring=byte_string, write_to=path + ".png")
+            return 0
     return 1
 
 
+def get_available_fonts():
+    """
+    Renvoie les polices disponibles sur le serveur nodejs
+    :return: Tableau de font
+    """
+    url = "http://localhost:8080/fonts"
+    r = requests.get(url)
+    if r.status_code == 200:
+        array = r.content.decode("utf8")
+        array = array[:-1]
+        array = array[1:]
+        return array.split("/")
+    return None
 
 
 if __name__ == "__main__":
-    start_time = time.time()
-    get_new_captcha("./coucou", text="A38hCNp8", color="green")
-    get_new_captcha("./coucou2", text="Ici8letr")
-    print("--- %s seconds ---" % (time.time() - start_time))
+    fonts = get_available_fonts()
+    for font in fonts:
+        get_new_captcha("./coucou" + font, text="A38hCNp8", color="green", font=font)
