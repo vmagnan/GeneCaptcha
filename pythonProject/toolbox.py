@@ -6,7 +6,13 @@ import os
 from glob import glob
 import urllib
 import requests
+import pytesseract
 import time
+import string
+import random
+import easyocr
+
+from PIL import Image
 
 
 def svg_to_png(svg_path):
@@ -46,7 +52,7 @@ def get_new_captcha(path, /, **keywords):
     """
     if len(keywords) > 0 and 'text' in keywords:
         url = "http://localhost:8080/captcha?" + urllib.parse.urlencode(keywords)
-        print(url)
+        # print(url)
         r = requests.get(url)
         if r.status_code == 200:
             byte_string = beautify_string(r.content.decode("utf8"))
@@ -70,7 +76,41 @@ def get_available_fonts():
     return None
 
 
+def get_random_string(length):
+    # With combination of lower and upper case
+    allowed_characters = string.ascii_letters + string.digits  # + string.punctuation
+    generated_string = "".join(random.choice(allowed_characters) for i in range(8))
+    return generated_string
+
+
+def get_string_ocr_pytesseract(image_path):
+    raw_string = pytesseract.image_to_string(Image.open(image_path))
+    beautified_string = raw_string.replace("\n", "").replace("\x0c", "").replace(" ", "")
+    return beautified_string
+
+
+def get_string_ocr_easyocr(image_path, reader):
+    result = reader.readtext(image_path)
+    liste = [x for elem in result for x in elem]
+    if len(liste) > 0:
+        return liste[1].replace(" ", "")
+    return ""
+
+
 if __name__ == "__main__":
     fonts = get_available_fonts()
+    captchas = []
+    strings_ocr_pytesseract = []
+    strings_ocr_easyocr = []
+    reader = easyocr.Reader(['en'])
     for font in fonts:
-        get_new_captcha("./coucou" + font, text="A38hCNp8", color="green", font=font, width=600, height=200, font_size=64)
+        random_string = get_random_string(8)
+        get_new_captcha("./" + random_string, text=random_string, color="green", font=font, width=600, height=200,
+                        font_size=64, noise=1)
+        path_img = "./" + random_string + ".png"
+        strings_ocr_pytesseract.append(get_string_ocr_pytesseract(path_img))
+        strings_ocr_easyocr.append(get_string_ocr_easyocr(path_img, reader))
+        captchas.append(random_string)
+    print("Captcha   : {tab}".format(tab=captchas))
+    print("Tesseract : {tab}".format(tab=strings_ocr_pytesseract))
+    print("EasyOCR   : {tab}".format(tab=strings_ocr_easyocr))
