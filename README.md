@@ -1,4 +1,4 @@
-# GeneCaptcha : Générateur d'images captcha non résolvables par des OCR
+# GeneCaptcha
 
 **Objectif :** Trouver les paramètres optimaux empêchant les OCR de résoudre le texte inclut dans des captchas.
 
