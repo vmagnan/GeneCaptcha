@@ -7,7 +7,6 @@ from glob import glob
 import urllib
 import requests
 import pytesseract
-import time
 import string
 import random
 import easyocr
@@ -91,9 +90,9 @@ def get_string_ocr_pytesseract(image_path):
 
 def get_string_ocr_easyocr(image_path, reader):
     result = reader.readtext(image_path)
-    liste = [x for elem in result for x in elem]
-    if len(liste) > 0:
-        return liste[1].replace(" ", "")
+    array = [x for elem in result for x in elem]
+    if len(array) > 0:
+        return array[1].replace(" ", "")
     return ""
 
 

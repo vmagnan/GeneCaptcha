@@ -14,399 +14,342 @@ from glob import glob
 import requests
 import time
 import urllib
-
-class bcolors:
-	GREEN = '\033[92m' #GREEN
-	YELLOW = '\033[93m' #YELLOW
-	RED = '\033[91m' #RED
-	BLUE = '\033[96m' #BLUE
-	RESET = '\033[0m' #RESET COLOR
-
-def main():
-	# Overture du CSV
-	csvFile = open('matrice.csv', encoding='ISO-8859-1')
-	dataCSV = csv.reader(csvFile, delimiter=';')
-	data_list = list(dataCSV)
-
-	#Ouverture du fichier lettre.json
-	json_file = open('lettre.json')
-	json_data = json.load(json_file)
-
-	listePolice = get_available_fonts()
-	#print(json_data)
+from toolbox import *
 
 
-	#Coefficient d'efficacité moyen de chaque Police 
-
-	#Coefficient d'efficacité moyen de chaque couleur
-	listeCouleur = ["red", "blue", "green", "yellow"]#{'Bleu': 1, 'Rouge': 1, 'Jaune': 1, 'Vert': 1} 
-
-	#Coefficient d'efficacité moyen de chaque lettre
-	listeLettre = {'A': 1, 'B': 2, 'C': 1, 'D': 5, 'E': 1, 'F': 3, 'G': 8,'H': 2} #A completer
-	listeResultat = {}
-	listePath = ["Image/2/Noise-1/", "Image/2/Noise-3/", "Image/2/Noise-5/", "Image/5/Noise-1/", "Image/5/Noise-3/", "Image/5/Noise-5/", "Image/10/Noise-1/", "Image/10/Noise-3/", "Image/10/Noise-5/"]
-
-	#mutation(listeCouleur, listePolice)
-	initImage(listeCouleur, listePolice)
-	#print(calculBestRapport(listeCouleur, listePolice, json_data))
-
-	while listePath != []: #Condition d'arret de l'algo
-		listeFichiers = []
-		mutation(listeCouleur, listePolice)
-		listeResultat = evaluation(listeFichiers, listeResultat, path, data_list)
-		print("liste resultat = " + str(listeResultat))
-		listeResultat = selection(listeResultat)
-		sorted(listeResultat.items(), key=lambda t: t[1])
-		print("liste resultat apres selection = " + str(listeResultat))
-
-	
-	printTab(data_list)
-	print(listeResultat)
-	listeResultat = selection(listeResultat)
-
-def initImage(listeCouleur, listePolice):
-	for i in range(10):
-		couleur = random.choice(listeCouleur)
-		police = random.choice(listePolice)
-		texte = newString()
-		path = "./Image/test/"+texte+"_"+couleur+"_"+police[:-4]
-		print(path)
-		get_new_captcha(path, text=texte, color=couleur, font=police)
+class BColors:
+    GREEN = '\033[92m'  # GREEN
+    YELLOW = '\033[93m'  # YELLOW
+    RED = '\033[91m'  # RED
+    BLUE = '\033[96m'  # BLUE
+    RESET = '\033[0m'  # RESET COLOR
 
 
-
-def moyenneCouleur(Couleur, json_data):
-	cptCouleur = 0
-	cpt = 0
-	for lettre, valeur in json_data.items():
-		for elem, police in valeur.items():
-			for couleur, score in police.items():
-				if couleur == Couleur:
-					cptCouleur += score
-					cpt += 1
-	return cptCouleur/cpt
-
-def rapportCouleurPolice(Couleur, Police, json_data):
-	cptCouleur = 0
-	cpt = 0
-	for lettre, valeur in json_data.items():
-		for police, elem in valeur.items():
-			for couleur, score in elem.items():
-				if couleur == Couleur and police == Police:
-					cptCouleur += score
-					cpt += 1
-	return cptCouleur/cpt
-
-def calculBestRapport(listeCouleur, listePolice, json_data):
-	bestRapport = 1
-	for couleur in listeCouleur:
-		for police in listePolice:
-			rapport = rapportCouleurPolice(couleur, police, json_data)
-			print(rapport)
-			if rapport < bestRapport:
-				bestRapport = rapport
-	return bestRapport
-
-def selection(listeResultat):
-	liste = {}
-	for elem, valeur in listeResultat.items():
-		if valeur <= 25:
-			liste[elem]=valeur
-	return liste
+def init_image(colors, fonts):
+    for i in range(10):
+        color = random.choice(colors)
+        font = random.choice(fonts)
+        text = new_string()
+        path = "./Image/test/" + text + "_" + color + "_" + font[:-4]
+        print(path)
+        get_new_captcha(path, text=text, color=color, font=font)
 
 
-def evaluation(texteOriginal, texteAlgo):
-	for fichier in listeFichiers:
-		filePath = path + fichier
-		liste = easyOCR(filePath)
-		if liste != []:
-			print("Image = " + str(fichier[:-4]))
-			print("Algo = " + str(liste[1]))
-			listeResultat = compare(fichier[:-4], liste[1], data_list, listeResultat)
-		else:
-			print("Fichier non reconnu par EasyOCR !")
-
-	return listeResultat
-
-def createRandomListe(listeInitiale):
-	listeFinale = []
-	liste = []
-	for elem, proba in listeInitiale.items():
-		for i in range(proba):
-			liste.append(elem)
-	print(liste)
-	for i in range(10):
-		listeFinale.append(random.choice(liste))
-	print(listeFinale)
-
-def choixDossier(listePath):
-	path = random.choice(listePath)
-	listePath.pop(listePath.index(path))
-	return listePath, path
-
-def ajoutFichier(listeFichiers, path):
-	for (repertoire, sousRepertoires, fichiers) in walk(path):
-		listeFichiers.extend(fichiers)
-	return listeFichiers
-
-def newString():
-	string = ""
-	listeLettres = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j']
-	for i in range(10):
-		string += random.choice(listeLettres)
-	return string
-
-def getDataName(fileName):
-	data = fileName.split("_")
-	data[-1] = data[-1][:-4]
-	return data
-
-def mutation(listeCouleur, listePolice):
-	liste = ["color", "lettre", "police"]
-	choice = random.choice(liste)
-	if choice == "color":
-		fileName = []
-		print("color")
-		for root, dirs, files in os.walk("./Image/test"):
-			for i in files:
-				fileName.append(i[:-4].split("_"))
-		os.system('rm ./Image/test/*')
-		for i in range(10):
-			couleur = random.choice(listeCouleur)
-			path = "./Image/test/"+fileName[i][0]+"_"+couleur+"_"+fileName[i][2]
-			get_new_captcha(path, text=fileName[i][0], color=couleur, font=fileName[i][2])
-	elif choice == "lettre":
-		fileName = []
-		print("lettre")
-		for root, dirs, files in os.walk("./Image/test"):
-			for i in files:
-				fileName.append(i[:-4].split("_"))
-		os.system('rm ./Image/test/*')
-		for i in range(10):
-			texte = newString()
-			path = "./Image/test/"+texte+"_"+fileName[i][1]+"_"+fileName[i][2]
-			get_new_captcha(path, text=texte, color=fileName[i][1], font=fileName[i][2])
-
-	elif choice == "police":
-		fileName = []
-		print("lettre")
-		for root, dirs, files in os.walk("./Image/test"):
-			for i in files:
-				fileName.append(i[:-4].split("_"))
-		os.system('rm ./Image/test/*')
-		for i in range(10):
-			police = random.choice(listePolice)
-			path = "./Image/test/"+fileName[i][0]+"_"+fileName[i][1]+"_"+police
-			get_new_captcha(path, text=fileName[i][0], color=fileName[i][1], font=police)
+def average_color(color, json_data):
+    cpt_color = 0
+    cpt = 0
+    for letter, value in json_data.items():
+        for elem, police in value.items():
+            for color, score in police.items():
+                if color == color:
+                    cpt_color += score
+                    cpt += 1
+    return cpt_color / cpt
 
 
+def relation_color_font(color, font, json_data):
+    cpt_color = 0
+    cpt = 0
+    for letter, value in json_data.items():
+        for police, elem in value.items():
+            for color, score in elem.items():
+                if color == color and police == font:
+                    cpt_color += score
+                    cpt += 1
+    return cpt_color / cpt
 
 
-def easyOCR(filePath):
-	reader = easyocr.Reader(['en']) # need to run only once to load model into memory
-	result = reader.readtext(filePath)
-	liste = [x for elem in result for x in elem]
-	return liste
-
-def printTab(data_list):
-	for line in data_list:
-		string = ""
-		for elem in line:
-			if elem == "ï»¿":
-				string += " |"
-			else:
-				if elem != "0":
-					string += bcolors.BLUE + str(elem) + bcolors.RESET + "|"
-				else:
-					string += str(elem) + "|"
-		print(string)
-
-def compare(texteOriginal, texteAlgo, data_list, listeResultat): #prend en argument le texte original de la photo et celui que l'algo a retourné
-	coeffLong = 0 #coefficient de variation de la longueur
-	nbLettreSimilaire = 0 #nombre de lettre similaire entre le texte original et celui trouvé par l'algo
-	lettreRessemblante = 0 #nombre de lettre qui se ressemblent
-	original = list(texteOriginal)
-	algo = list(texteAlgo)
-
-	longueurOriginalInitiale = len(original)
-	longueurAlgoInitiale = len(algo)
-
-	cpt = 0
-
-	longueurAlgo = len(algo)
-	longueurOriginal = len(original)
-
-	while cpt < longueurAlgo: #parcourt le texte retourné par l'algorithme
-		cpt2 = 0
-		while cpt2 < longueurOriginal: #parcourt le texte original qui apparait sur l'image
-			# verifie si la lettre de l'algo et celle de l'image sont les mêmes
-			if algo[cpt] == original[cpt2]:
-				coord = findLettre(algo[cpt], original[cpt2], data_list)
-				inc(coord, data_list)
-				print("les lettre sont similaires : " + algo[cpt])
-				nbLettreSimilaire +=1
-				#Retire les lettres des listes de caractère dans le cas où elles sont similaire
-				algo.pop(cpt)
-				original.pop(cpt2)
-				longueurAlgo -= 1
-				longueurOriginal -= 1
-				cpt2 = longueurOriginal
-			# verifie si la lettre de l'algo et celle de l'image se ressemblent
-			elif checkLettre(algo[cpt], original[cpt2]):
-				coord = findLettre(algo[cpt], original[cpt2], data_list)
-				inc(coord, data_list)
-				print(algo[cpt] + " ressemble à " + original[cpt2])
-				lettreRessemblante += 1
-				algo.pop(cpt)
-				original.pop(cpt2)
-				longueurAlgo -= 1
-				longueurOriginal -= 1
-				cpt2 = longueurOriginal
-			else:
-				cpt2 += 1
-				if cpt2 >= longueurOriginal:
-					cpt += 1
-
-	score = (nbLettreSimilaire + (lettreRessemblante/2))/longueurOriginalInitiale*100
-	listeResultat[texteOriginal] = score
-	print("Nombre de lettre similaires = " + str(nbLettreSimilaire))
-	print("Nombre de lettres qui se ressemblent = " + str(lettreRessemblante))
-	printColor(score)
-	return listeResultat
-
-def printColor(score):
-	val = score
-	if val <= 35:
-		print(bcolors.RED + str(val) + "%"+" de reussite" + bcolors.RESET)
-	elif val > 35 and val <= 70:
-		print(bcolors.YELLOW + str(val) + "%"+" de reussite" + bcolors.RESET)
-	else:
-		print(bcolors.GREEN + str(val) + "%"+" de reussite" + bcolors.RESET)
+def find_best_relation(colors, fonts, json_data):
+    best_relation = 1
+    for color in colors:
+        for font in fonts:
+            relation = relation_color_font(color, font, json_data)
+            print(relation)
+            if relation < best_relation:
+                best_relation = relation
+    return best_relation
 
 
+def selection(results):
+    list = {}
+    for elem, value in results.items():
+        if value <= 25:
+            list[elem] = value
+    return list
 
 
-def checkLettre(lettreAlgo, lettreImage):
-	switcher = {
-		"m": compareLettre(lettreImage, ['M','n','N']),
-		"u": compareLettre(lettreImage, ['U','v','V']),
-		"U": compareLettre(lettreImage, ['u','v','V']),
-		"i": compareLettre(lettreImage, ['I','l']),
-		"w": compareLettre(lettreImage, ['W']),
-		"B": compareLettre(lettreImage, ['S','s','8']),
-		"z": compareLettre(lettreImage, ['Z']),
-		"Z": compareLettre(lettreImage, ['z']),
-		"p": compareLettre(lettreImage, ['P','F','f']),
-		"P": compareLettre(lettreImage, ['p','F','f']),
-		"f": compareLettre(lettreImage, ['F','p','P']),
-		"F": compareLettre(lettreImage, ['f','p','P']),
-		"k": compareLettre(lettreImage, ['K','x','X']),
-		"K": compareLettre(lettreImage, ['k','x','X']),
-		"x": compareLettre(lettreImage, ['X','K','k']),
-		"X": compareLettre(lettreImage, ['x','K','k']),
-		"c": compareLettre(lettreImage, ['C']),
-		"C": compareLettre(lettreImage, ['c']),
-		"j": compareLettre(lettreImage, ['J']),
-		"J": compareLettre(lettreImage, ['j']),
-		"o": compareLettre(lettreImage, ['O','Q','0']),
-		"O": compareLettre(lettreImage, ['o','Q','0']),
-		"Q": compareLettre(lettreImage, ['o','O','0']),
-		"0": compareLettre(lettreImage, ['o','O','Q']),
-		"v": compareLettre(lettreImage, ['V','u','U']),
-		"V": compareLettre(lettreImage, ['v','u','U']),
-		"S": compareLettre(lettreImage, ['s','5']),
-		"s": compareLettre(lettreImage, ['S','5']),
-		"W": compareLettre(lettreImage, ['w'])
-	}
-	return switcher.get(lettreAlgo,False)
+def evaluation(text_captcha, text_ocr):
+    for file in files:
+        file_path = path + file
+        list = easy_ocr(file_path)
+        if list != []:
+            print("Image = " + str(file[:-4]))
+            print("Algo = " + str(list[1]))
+            results = compare(file[:-4], list[1], data_array, results)
+        else:
+            print("Fichier non reconnu par EasyOCR !")
 
-def compareLettre(lettre, tab):
-	for k in range(len(tab)):
-		if lettre == tab[k]:
-			return True
-
-def findLettre(lettreImage, lettreAlgo, dataCSV):
-	coord = [0,0]
-	for i in dataCSV[0]:
-		if i == lettreImage:
-			coord[0] = dataCSV[0].index(lettreImage)
-	for i in range(len(dataCSV)):
-		if dataCSV[i][0] == lettreAlgo:
-			coord[1] = i
-	return coord
-
-def inc(coord, matrice):
-	nb = int(matrice[coord[0]][coord[1]])
-	nb += 1
-	matrice[coord[0]][coord[1]] = nb
-
-def tesseract(fichier):
-	cmd = "convert -density 100 " + str(fichier) + "-depth 8 -strip -background white alpha off out.tiff"
-	os.system(cmd)
-	os.system('tesseract out.tiff test')
-	os.system('cat test.txt')
+    return results
 
 
+def create_random_list(initial_list):
+    final_list = []
+    list = []
+    for elem, probability in initial_list.items():
+        for i in range(probability):
+            list.append(elem)
+    print(list)
+    for i in range(10):
+        final_list.append(random.choice(list))
+    print(final_list)
 
 
-def svg_to_png(svg_path):
-    """
-    :param svg_path: Path to a svg file
-    :return: Nothing
-    """
-    cairosvg.svg2png(url=svg_path, write_to=svg_path.replace(".svg", ".png"))
+def choice_folder(paths):
+    path = random.choice(paths)
+    paths.pop(paths.index(path))
+    return paths, path
 
 
-def get_paths_files_with_extension_from_folder(folder, extension='svg'):
-    """
-    :param extension: Extension of the files you are searching, default is svg
-    :param folder: Folder in which searching files
-    :return list of path to svg files without extension:
-    """
-    list_paths_to_files = [y for x in os.walk(folder) for y in glob(os.path.join(x[0], '*.' + extension))]
-    for i in range(len(list_paths_to_files)):
-        list_paths_to_files[i] = list_paths_to_files[i].replace("\\", "/")
-    return list_paths_to_files
+def add_file(files, path):
+    for (directory, subdirectories, file) in walk(path):
+        files.extend(file)
+    return files
 
 
-def beautify_string(string):
-    string_no_slash = string.replace("\\", "")
-    string_remove_last_char = string_no_slash[:-1]
-    string_remove_first_char = string_remove_last_char[1:]
-    return string_remove_first_char
+def new_string():
+    string = ""
+    letters = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j']
+    for i in range(10):
+        string += random.choice(letters)
+    return string
 
 
-def get_new_captcha(path, /, **keywords):
-    """
-    Requête le serveur nodejs pour générer un captcha
-    Exemple d'appel : get_new_captcha("./coucou"+font, text="A38hCNp8", color="green", font=font)
-    :param path: Le chemin de l'image à sauvegarder (Ne pas spécifier l'extension)
-    :param keywords: Tableau de paramètres correspondant actuellement aux paramètres nommés : text, color et font.
-    :return: 0 = OK | 1 = Erreur
-    """
-    if len(keywords) > 0 and 'text' in keywords:
-        url = "http://localhost:8080/captcha?" + urllib.parse.urlencode(keywords)
-        print(url)
-        r = requests.get(url)
-        if r.status_code == 200:
-            byte_string = beautify_string(r.content.decode("utf8"))
-            cairosvg.svg2png(bytestring=byte_string, write_to=path + ".png")
-            return 0
-    return 1
+def get_data_name(filename):
+    data = filename.split("_")
+    data[-1] = data[-1][:-4]
+    return data
 
 
-def get_available_fonts():
-    """
-    Renvoie les polices disponibles sur le serveur nodejs
-    :return: Tableau de font
-    """
-    url = "http://localhost:8080/fonts"
-    r = requests.get(url)
-    if r.status_code == 200:
-        array = r.content.decode("utf8")
-        array = array[:-1]
-        array = array[1:]
-        return array.split("/")
-    return None
+def mutation(colors, fonts):
+    list = ["color", "lettre", "police"]
+    choice = random.choice(list)
+    if choice == "color":
+        filename = []
+        print("color")
+        for root, dirs, files in os.walk("./Image/test"):
+            for i in files:
+                filename.append(i[:-4].split("_"))
+        os.system('rm ./Image/test/*')
+        for i in range(10):
+            color = random.choice(colors)
+            path = "./Image/test/" + filename[i][0] + "_" + color + "_" + filename[i][2]
+            get_new_captcha(path, text=filename[i][0], color=color, font=filename[i][2])
+    elif choice == "lettre":
+        filename = []
+        print("lettre")
+        for root, dirs, files in os.walk("./Image/test"):
+            for i in files:
+                filename.append(i[:-4].split("_"))
+        os.system('rm ./Image/test/*')
+        for i in range(10):
+            text = new_string()
+            path = "./Image/test/" + text + "_" + filename[i][1] + "_" + filename[i][2]
+            get_new_captcha(path, text=text, color=filename[i][1], font=filename[i][2])
 
-main()
+    elif choice == "police":
+        filename = []
+        print("lettre")
+        for root, dirs, files in os.walk("./Image/test"):
+            for i in files:
+                filename.append(i[:-4].split("_"))
+        os.system('rm ./Image/test/*')
+        for i in range(10):
+            police = random.choice(fonts)
+            path = "./Image/test/" + filename[i][0] + "_" + filename[i][1] + "_" + police
+            get_new_captcha(path, text=filename[i][0], color=filename[i][1], font=police)
+
+
+def easy_ocr(file_path):
+    reader = easyocr.Reader(['en'])  # need to run only once to load model into memory
+    result = reader.readtext(file_path)
+    array = [x for elem in result for x in elem]
+    return array
+
+
+def print_array(data_array):
+    for line in data_array:
+        string = ""
+        for elem in line:
+            if elem == "ï»¿":
+                string += " |"
+            else:
+                if elem != "0":
+                    string += BColors.BLUE + str(elem) + BColors.RESET + "|"
+                else:
+                    string += str(elem) + "|"
+        print(string)
+
+
+def compare(text_captcha, text_ocr, data_array,
+            results):  # prend en argument le texte original de la photo et celui que l'algo a retourné
+    coeff_long = 0  # coefficient de variation de la longueur
+    nb_same_letters = 0  # nombre de lettre similaire entre le texte original et celui trouvé par l'algo
+    nb_alike_letters = 0  # nombre de lettre qui se ressemblent
+    original = list(text_captcha)
+    ocr = list(text_ocr)
+
+    initial_original_length = len(original)
+    initial_ocr_length = len(ocr)
+
+    cpt = 0
+
+    ocr_length = len(ocr)
+    original_length = len(original)
+
+    while cpt < ocr_length:  # parcourt le texte retourné par l'algorithme
+        cpt2 = 0
+        while cpt2 < original_length:  # parcourt le texte original qui apparait sur l'image
+            # verifie si la lettre de l'algo et celle de l'image sont les mêmes
+            if ocr[cpt] == original[cpt2]:
+                coord = find_letter(ocr[cpt], original[cpt2], data_array)
+                inc(coord, data_array)
+                print("les lettre sont similaires : " + ocr[cpt])
+                nb_same_letters += 1
+                # Retire les lettres des listes de caractère dans le cas où elles sont similaire
+                ocr.pop(cpt)
+                original.pop(cpt2)
+                ocr_length -= 1
+                original_length -= 1
+                cpt2 = original_length
+            # verifie si la lettre de l'algo et celle de l'image se ressemblent
+            elif check_letter(ocr[cpt], original[cpt2]):
+                coord = find_letter(ocr[cpt], original[cpt2], data_array)
+                inc(coord, data_array)
+                print(ocr[cpt] + " ressemble à " + original[cpt2])
+                nb_alike_letters += 1
+                ocr.pop(cpt)
+                original.pop(cpt2)
+                ocr_length -= 1
+                original_length -= 1
+                cpt2 = original_length
+            else:
+                cpt2 += 1
+                if cpt2 >= original_length:
+                    cpt += 1
+
+    score = (nb_same_letters + (nb_alike_letters / 2)) / initial_original_length * 100
+    results[text_captcha] = score
+    print("Nombre de lettre similaires = " + str(nb_same_letters))
+    print("Nombre de lettres qui se ressemblent = " + str(nb_alike_letters))
+    print_color(score)
+    return results
+
+
+def print_color(score):
+    val = score
+    if val <= 35:
+        print(BColors.RED + str(val) + "%" + " de reussite" + BColors.RESET)
+    elif 35 < val <= 70:
+        print(BColors.YELLOW + str(val) + "%" + " de reussite" + BColors.RESET)
+    else:
+        print(BColors.GREEN + str(val) + "%" + " de reussite" + BColors.RESET)
+
+
+def check_letter(letter_algo, letter_image):
+    switcher = {
+        "m": compare_letter(letter_image, ['M', 'n', 'N']),
+        "u": compare_letter(letter_image, ['U', 'v', 'V']),
+        "U": compare_letter(letter_image, ['u', 'v', 'V']),
+        "i": compare_letter(letter_image, ['I', 'l']),
+        "w": compare_letter(letter_image, ['W']),
+        "B": compare_letter(letter_image, ['S', 's', '8']),
+        "z": compare_letter(letter_image, ['Z']),
+        "Z": compare_letter(letter_image, ['z']),
+        "p": compare_letter(letter_image, ['P', 'F', 'f']),
+        "P": compare_letter(letter_image, ['p', 'F', 'f']),
+        "f": compare_letter(letter_image, ['F', 'p', 'P']),
+        "F": compare_letter(letter_image, ['f', 'p', 'P']),
+        "k": compare_letter(letter_image, ['K', 'x', 'X']),
+        "K": compare_letter(letter_image, ['k', 'x', 'X']),
+        "x": compare_letter(letter_image, ['X', 'K', 'k']),
+        "X": compare_letter(letter_image, ['x', 'K', 'k']),
+        "c": compare_letter(letter_image, ['C']),
+        "C": compare_letter(letter_image, ['c']),
+        "j": compare_letter(letter_image, ['J']),
+        "J": compare_letter(letter_image, ['j']),
+        "o": compare_letter(letter_image, ['O', 'Q', '0']),
+        "O": compare_letter(letter_image, ['o', 'Q', '0']),
+        "Q": compare_letter(letter_image, ['o', 'O', '0']),
+        "0": compare_letter(letter_image, ['o', 'O', 'Q']),
+        "v": compare_letter(letter_image, ['V', 'u', 'U']),
+        "V": compare_letter(letter_image, ['v', 'u', 'U']),
+        "S": compare_letter(letter_image, ['s', '5']),
+        "s": compare_letter(letter_image, ['S', '5']),
+        "W": compare_letter(letter_image, ['w'])
+    }
+    return switcher.get(letter_algo, False)
+
+
+def compare_letter(letter, tab):
+    for k in range(len(tab)):
+        if letter == tab[k]:
+            return True
+
+
+def find_letter(letter_image, letter_algo, data_csv):
+    coord = [0, 0]
+    for i in data_csv[0]:
+        if i == letter_image:
+            coord[0] = data_csv[0].index(letter_image)
+    for i in range(len(data_csv)):
+        if data_csv[i][0] == letter_algo:
+            coord[1] = i
+    return coord
+
+
+def inc(coord, matrix):
+    nb = int(matrix[coord[0]][coord[1]])
+    nb += 1
+    matrix[coord[0]][coord[1]] = nb
+
+
+if __name__ == "__main__":
+    # Overture du CSV
+    csv_file = open('matrice.csv', encoding='ISO-8859-1')
+    data_csv = csv.reader(csv_file, delimiter=';')
+    data_array = list(data_csv)
+
+    # Ouverture du fichier lettre.json
+    json_file = open('lettre.json')
+    json_data = json.load(json_file)
+
+    fonts = get_available_fonts()
+    # print(json_data)
+
+    # Coefficient d'efficacité moyen de chaque Police
+
+    # Coefficient d'efficacité moyen de chaque couleur
+    colors = ["red", "blue", "green", "yellow"]  # {'Bleu': 1, 'Rouge': 1, 'Jaune': 1, 'Vert': 1}
+
+    # Coefficient d'efficacité moyen de chaque lettre
+    letters = {'A': 1, 'B': 2, 'C': 1, 'D': 5, 'E': 1, 'F': 3, 'G': 8, 'H': 2}  # A completer
+    results = {}
+    paths = ["Image/2/Noise-1/", "Image/2/Noise-3/", "Image/2/Noise-5/", "Image/5/Noise-1/", "Image/5/Noise-3/",
+             "Image/5/Noise-5/", "Image/10/Noise-1/", "Image/10/Noise-3/", "Image/10/Noise-5/"]
+
+    # mutation(listeCouleur, listePolice)
+    init_image(colors, fonts)
+    # print(calculBestRapport(listeCouleur, listePolice, json_data))
+
+    while paths != []:  # Condition d'arret de l'algo
+        files = []
+        mutation(colors, fonts)
+        results = evaluation(files, results, path, data_array)
+        print("liste resultat = " + str(results))
+        results = selection(results)
+        sorted(results.items(), key=lambda t: t[1])
+        print("liste resultat apres selection = " + str(results))
+
+    print_array(data_array)
+    print(results)
+    results = selection(results)
