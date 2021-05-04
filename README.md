@@ -1,20 +1,22 @@
 # GeneCaptcha
 
-**Objectif :** Trouver les paramètres optimaux empêchant les OCR de résoudre le texte inclut dans des captchas.
+**Purpose :** Find optimal image's parameters to prevent OCR to solve the text.
 
 ## Installation
 
-Cloner le repo : `git clone https://github.com/valm13/GeneCaptcha.git`
+Clone the repo : `git clone https://github.com/valm13/GeneCaptcha.git`
 
-### Serveur de captchas
+### Captcha's generator server
 
-* Installer nodeJS et npm : <https://nodejs.org/en/download/>
-* Aller dans le répertoire : captcha-generators\svg_captcha et exécuter : `npm install package.json`
+* Install nodeJS and npm : <https://nodejs.org/en/download/>
+* Go to : captcha-generators/svg_captcha and execute : `npm install package.json`
+* Then, move the file from captcha-generators/svg_captcha/index.js to captcha-generators/svg_captcha/node_modules/svg-captcha/index.js
+* That's it !!!
 
-### Pour faire fonctionner le programme python
+### Python program
 
-* Nécessite python 3.6+ : <https://www.python.org/downloads/>
-* Installer les dépendances avec pip : `pip install pytesseract, CairoSVG, Pillow, easyocr`
-* Installer Tesseract : <https://tesseract-ocr.github.io/tessdoc/Installation.html>
-* Installer CairoSVG : <https://cairosvg.org/documentation/#installation>
-* Verifier que pytesseract soit bien dans le PATH.
+* Require python 3.6+ : <https://www.python.org/downloads/>
+* Install the following dependancies with pip : `pip install pytesseract, CairoSVG, Pillow, easyocr`
+* Install Tesseract : <https://tesseract-ocr.github.io/tessdoc/Installation.html>
+* Install CairoSVG : <https://cairosvg.org/documentation/#installation>
+* Verify that your PATH include pytesseract.

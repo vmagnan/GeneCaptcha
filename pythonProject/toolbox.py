@@ -46,7 +46,7 @@ def get_new_captcha(path, /, **keywords):
     Requête le serveur nodejs pour générer un captcha
     Exemple d'appel : get_new_captcha("./coucou"+font, text="A38hCNp8", color="green", font=font)
     :param path: Le chemin de l'image à sauvegarder (Ne pas spécifier l'extension)
-    :param keywords: Tableau de paramètres correspondant actuellement aux paramètres nommés : text, color, font, width, height, font_size, noise.
+    :param keywords: Tableau de paramètres correspondant actuellement aux paramètres nommés : text, color, background, font, width, height, font_size, noise.
     :return: 0 = OK | 1 = Erreur
     """
     if len(keywords) > 0 and 'text' in keywords:
@@ -104,7 +104,7 @@ if __name__ == "__main__":
     reader = easyocr.Reader(['en'])
     for font in fonts:
         random_string = get_random_string(8)
-        get_new_captcha("./" + random_string, text=random_string, color="green", font=font, width=600, height=200,
+        get_new_captcha("./" + random_string, text=random_string, color="green", background="white", font=font, width=600, height=200,
                         font_size=64, noise=1)
         path_img = "./" + random_string + ".png"
         strings_ocr_pytesseract.append(get_string_ocr_pytesseract(path_img))
