@@ -20,3 +20,7 @@ Clone the repo : `git clone https://github.com/valm13/GeneCaptcha.git`
 * Install Tesseract : <https://tesseract-ocr.github.io/tessdoc/Installation.html>
 * Install CairoSVG : <https://cairosvg.org/documentation/#installation>
 * Verify that your PATH include pytesseract.
+
+## Run
+
+from captcha-generators/svg_captcha, run `node server.js`
