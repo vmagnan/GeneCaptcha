@@ -73,6 +73,6 @@ app.get('/fonts', (req, res) => {
 })
 app.listen(8080, () => {
     console.log('Serveur de génération de captcha à l\'écoute');
-    console.log('Exemple de requête : http://localhost:8080/captcha?text=blabla&color=blue&font=comicsansms.ttf&width=800&height=400&font_size=100&noise=1');
+    console.log('Exemple de requête : http://localhost:8080/captcha?text=blabla&color=blue&font=comic-sans-ms.ttf&width=800&height=400&font_size=100&noise=1');
     console.log('Seul le paramètre text est obligatoire, les autres sont optionnels. Pour la couleur, c\'est soit en hexa, soit les noms anglais');
 })

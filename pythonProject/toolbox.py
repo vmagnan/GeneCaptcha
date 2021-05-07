@@ -1,6 +1,3 @@
-"""
-To install cairoSVG please follow these instructions : https://cairosvg.org/documentation/#installation
-"""
 import cairosvg
 import os
 from glob import glob
@@ -10,12 +7,12 @@ import pytesseract
 import string
 import random
 import easyocr
-
 from PIL import Image
 
 
 def svg_to_png(svg_path):
     """
+    Transform svg to png and save the file to same folder
     :param svg_path: Path to a svg file
     :return: Nothing
     """
@@ -34,7 +31,12 @@ def get_paths_files_with_extension_from_folder(folder, extension='svg'):
     return list_paths_to_files
 
 
-def beautify_string(string):
+def clear_captcha_svg_string(string):
+    """
+    Remove '\' everywhere and remove first and last characters
+    :param string:
+    :return: string
+    """
     string_no_slash = string.replace("\\", "")
     string_remove_last_char = string_no_slash[:-1]
     string_remove_first_char = string_remove_last_char[1:]
@@ -54,7 +56,7 @@ def get_new_captcha(path, /, **keywords):
         # print(url)
         r = requests.get(url)
         if r.status_code == 200:
-            byte_string = beautify_string(r.content.decode("utf8"))
+            byte_string = clear_captcha_svg_string(r.content.decode("utf8"))
             cairosvg.svg2png(bytestring=byte_string, write_to=path + ".png")
             return 0
     return 1
@@ -76,6 +78,11 @@ def get_available_fonts():
 
 
 def get_random_string(length):
+    """
+    Generate random string from letters & digits
+    :param length: length of the random string
+    :return: random string
+    """
     # With combination of lower and upper case
     allowed_characters = string.ascii_letters + string.digits  # + string.punctuation
     generated_string = "".join(random.choice(allowed_characters) for i in range(8))
@@ -83,12 +90,24 @@ def get_random_string(length):
 
 
 def get_string_ocr_pytesseract(image_path):
+    """
+    Resolve the string inside an image with pytesseract OCR
+    :param image_path: Path to a png, bmp or jpg image
+    :return: string
+    """
     raw_string = pytesseract.image_to_string(Image.open(image_path))
+    # Remove unwanted characters
     beautified_string = raw_string.replace("\n", "").replace("\x0c", "").replace(" ", "")
     return beautified_string
 
 
 def get_string_ocr_easyocr(image_path, reader):
+    """
+    Resolve the string inside an image with easyOCR
+    :param image_path: Path to a png, bmp or jpg image
+    :param reader: Initialized reader
+    :return: string
+    """
     result = reader.readtext(image_path)
     array = [x for elem in result for x in elem]
     if len(array) > 0:
