@@ -1,6 +1,6 @@
 # GeneCaptcha
 
-**Purpose :** Find optimal image's parameters to prevent OCR to solve the text.
+**Purpose :** Find optimal image's parameters to prevent OCR to solve the text of a captcha.
 
 ## Installation
 
