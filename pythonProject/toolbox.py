@@ -31,6 +31,11 @@ def get_paths_files_with_extension_from_folder(folder, extension='svg'):
     return list_paths_to_files
 
 
+def delete_files_with_extension_from_path(path, extension):
+    for f in get_paths_files_with_extension_from_folder(path, extension):
+        os.remove(f)
+
+
 def clear_captcha_svg_string(string):
     """
     Remove '\' everywhere and remove first and last characters
@@ -123,7 +128,8 @@ if __name__ == "__main__":
     reader = easyocr.Reader(['en'])
     for font in fonts:
         random_string = get_random_string(8)
-        get_new_captcha("./" + random_string, text=random_string, color="green", background="white", font=font, width=600, height=200,
+        get_new_captcha("./" + random_string, text=random_string, color="green", background="white", font=font,
+                        width=600, height=200,
                         font_size=64, noise=1)
         path_img = "./" + random_string + ".png"
         strings_ocr_pytesseract.append(get_string_ocr_pytesseract(path_img))

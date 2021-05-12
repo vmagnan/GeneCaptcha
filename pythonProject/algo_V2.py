@@ -1,53 +1,38 @@
-# Commande à utiliser:
-# python3 algo.py NomImage.png
-# /!\ L'image doit être au format ".png" /!\
-
-
-
-import json
-import easyocr
-import sys
 import csv
-import random
+import json
 from random import randint
-from os import walk
-import cairosvg
-import os
-from glob import glob
-import requests
-import time
-import urllib
 from toolbox import *
 
-class bcolors:
-    GREEN = '\033[92m' #GREEN
-    YELLOW = '\033[93m' #YELLOW
-    RED = '\033[91m' #RED
-    BLUE = '\033[96m' #BLUE
-    RESET = '\033[0m' #RESET COLOR
+
+class StdoutColors:
+    GREEN = '\033[92m'  # GREEN
+    YELLOW = '\033[93m'  # YELLOW
+    RED = '\033[91m'  # RED
+    BLUE = '\033[96m'  # BLUE
+    RESET = '\033[0m'  # RESET COLOR
+
 
 data = {}
 
 
-def init_image(listecolor, listefont):
-    os.system('rm ./Image/test/*')
+def init_image(colors, fonts):
+    delete_files_with_extension_from_path('./Image/test/', 'png')
     for i in range(5):
-        color = random.choice(listecolor)
-        font = random.choice(listefont)
-        text = newString()
-        path = "./Image/test/"+text+"_"+color+"_"+font[:-4]
+        color = random.choice(colors)
+        font = random.choice(fonts)
+        text = get_random_string(8)
+        path = "./Image/test/" + text + "_" + color + "_" + font[:-4]
         print(path)
         get_new_captcha(path, text=text, color=color, font=font)
 
 
-def levenshtein(stringImage, stringOCR, data_list):#marche ausssi avec len(image_text) - nbLettreJuste mais comme ca on peut modifier le score plus facilement
+def levenshtein(stringImage, stringOCR,
+                data_list):  # marche ausssi avec len(image_text) - nbLettreJuste mais comme ca on peut modifier le score plus facilement
     print("levensthein")
-    global data
     score = 0
-    orginal_length = len(stringImage)
+    original_length = len(stringImage)
     OCR_length = len(stringOCR)
-    score += abs(orginal_length-OCR_length)
-
+    score += abs(original_length - OCR_length)
     image_text = list(stringImage[0])
     OCR_text = list(stringOCR)
     same_letter = 0
@@ -66,10 +51,10 @@ def levenshtein(stringImage, stringOCR, data_list):#marche ausssi avec len(image
                 cpt += 1
             if cpt == len(image_text):
                 OCR_text.pop(0)
-
     score += (len(list(stringOCR)) - same_letter)
     print("score", score)
     return score
+
 
 # def moyennecolor(color, json_data):
 #   cptcolor = 0
@@ -111,6 +96,7 @@ def selection(result_list):
             liste.append(i)
     return liste
 
+
 def evaluation(data_list, data):
     print("evaluation")
     files_list = []
@@ -119,17 +105,20 @@ def evaluation(data_list, data):
         for i in range(len(files)):
             files_list.append(files[i][:-4].split("_"))
             print(files_list)
-            file_path =  "./Image/test/" + files[i]
-            liste = easyOCR(file_path)
-            if liste != []:
+            file_path = "./Image/test/" + files[i]
+            result_string_easyocr = get_string_ocr_easyocr(file_path, reader)
+            # liste = easyOCR(file_path)
+            if result_string_easyocr != "":
                 print("Image = " + str(files[i][:-4]))
-                print("Algo = " + str(liste[1]))
+                print("Algo = " + result_string_easyocr)
                 print(files_list[i])
-                files_list[i].append(levenshtein(files_list[i], liste[1], data_list)) #compare(fichier[:-4], liste[1], data_list, result_list)
+                files_list[i].append(levenshtein(files_list[i], result_string_easyocr, data_list))
+                # compare(fichier[:-4], result_string_easyocr, data_list, result_list)
             else:
                 print("Fichier non reconnu par EasyOCR !")
     print(files_list)
     return files_list
+
 
 # def createRandomListe(listeInitiale):
 #   listeFinale = []
@@ -143,76 +132,65 @@ def evaluation(data_list, data):
 #   print(listeFinale)
 
 
-def newString():
-    string = ""
-    letter_list = ['a', 'z', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p', 'm', 'l', 'k', 'j', 'h', 'g', 'f', 'd', 's', 'q', 'w', 'x', 'c', 'v', 'b', 'n', 'A', 'Z', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P', 'M', 'L', 'K', 'J', 'H', 'G', 'F', 'D', 'S', 'Q', 'W', 'X', 'C', 'V', 'B', 'N', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9']
-    for i in range(10):
-        string += random.choice(letter_list)
-    return string
-
 def modify_string(string):
     print("modify_string")
     string_list = list(string)
     new_string = ""
-    letter_list = ['a', 'z', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p', 'm', 'l', 'k', 'j', 'h', 'g', 'f', 'd', 's', 'q', 'w', 'x', 'c', 'v', 'b', 'n', 'A', 'Z', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P', 'M', 'L', 'K', 'J', 'H', 'G', 'F', 'D', 'S', 'Q', 'W', 'X', 'C', 'V', 'B', 'N', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9']
-    for i in range(randint(1,3)):
+    letter_list = ['a', 'z', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p', 'm', 'l', 'k', 'j', 'h', 'g', 'f', 'd', 's', 'q',
+                   'w', 'x', 'c', 'v', 'b', 'n', 'A', 'Z', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P', 'M', 'L', 'K', 'J',
+                   'H', 'G', 'F', 'D', 'S', 'Q', 'W', 'X', 'C', 'V', 'B', 'N', '0', '1', '2', '3', '4', '5', '6', '7',
+                   '8', '9']
+    for i in range(randint(1, 3)):
         lettre = random.choice(letter_list)
-        nb = randint(0,9)
+        nb = randint(len(string_list))
         print(string_list[nb])
         string_list[nb] = lettre
     for i in range(len(string_list)):
         new_string += string_list[i]
     return new_string
 
+
 # def getDataName(fileName):
 #   data = fileName.split("_")
 #   data[-1] = data[-1][:-4]    
 #   return data
 
-def mutation(listecolor, listefont,files_list):
+def mutation(listecolor, listefont, files_list):
     print("mutation")
     print(files_list)
     liste = ["color", "lettre", "font"]
-    choice = 'lettre' #random.choice(liste)
+    choice = 'lettre'  # random.choice(liste)
     if choice == "color":
         print("color")
-        os.system('rm ./Image/test/*')
+        delete_files_with_extension_from_path('./Image/test/', 'png')
         for i in range(len(files_list)):
             print("new captcha")
             color = random.choice(listecolor)
-            path = "./Image/test/"+files_list[i][0]+"_"+color+"_"+files_list[i][2]
+            path = "./Image/test/" + files_list[i][0] + "_" + color + "_" + files_list[i][2]
             print(path)
-            get_new_captcha(path, text=files_list[i][0], color=color, font=files_list[i][2]+".ttf")
+            get_new_captcha(path, text=files_list[i][0], color=color, font=files_list[i][2] + ".ttf")
     elif choice == "lettre":
         print("lettre")
-        os.system('rm ./Image/test/*')
+        delete_files_with_extension_from_path('./Image/test/', 'png')
         print(files_list)
         for i in range(len(files_list)):
             print("new captcha")
             text = modify_string(files_list[i][0])
             print(files_list[i][2])
-            path = "./Image/test/"+text+"_"+files_list[i][1]+"_"+files_list[i][2]
+            path = "./Image/test/" + text + "_" + files_list[i][1] + "_" + files_list[i][2]
             print(path)
-            get_new_captcha(path, text=text, color=files_list[i][1], font=files_list[i][2]+".ttf")
+            get_new_captcha(path, text=text, color=files_list[i][1], font=files_list[i][2] + ".ttf")
     elif choice == "font":
         print("lettre")
-        os.system('rm ./Image/test/*')
+        delete_files_with_extension_from_path('./Image/test/', 'png')
         print(files_list)
         for i in range(len(files_list)):
             print("new captcha")
             font = random.choice(listefont)
-            path = "./Image/test/"+files_list[i][0]+"_"+files_list[i][1]+"_"+font
+            path = "./Image/test/" + files_list[i][0] + "_" + files_list[i][1] + "_" + font
             print(path)
             get_new_captcha(path, text=files_list[i][0], color=files_list[i][1], font=font)
 
-
-
-
-def easyOCR(file_path):
-    reader = easyocr.Reader(['en']) # need to run only once to load model into memory
-    result = reader.readtext(file_path)
-    liste = [x for elem in result for x in elem]
-    return liste
 
 def printTab(data_list):
     for line in data_list:
@@ -222,10 +200,11 @@ def printTab(data_list):
                 string += " |"
             else:
                 if elem != "0":
-                    string += bcolors.BLUE + str(elem) + bcolors.RESET + "|"
+                    string += StdoutColors.BLUE + str(elem) + StdoutColors.RESET + "|"
                 else:
                     string += str(elem) + "|"
         print(string)
+
 
 # def compare(textOriginal, textAlgo, data_list, result_list): #prend en argument le text original de la photo et celui que l'algo a retourné
 #   coeffLong = 0 #coefficient de variation de la longueur
@@ -233,15 +212,11 @@ def printTab(data_list):
 #   lettreRessemblante = 0 #nombre de lettre qui se ressemblent
 #   original = list(textOriginal)
 #   algo = list(textAlgo)
-
 #   orginal_lengthInitiale = len(original)
 #   longueurAlgoInitiale = len(algo)
-
 #   cpt = 0
-
 #   longueurAlgo = len(algo)
 #   orginal_length = len(original)
-
 #   while cpt < longueurAlgo: #parcourt le text retourné par l'algorithme
 #       cpt2 = 0
 #       while cpt2 < orginal_length: #parcourt le text original qui apparait sur l'image
@@ -280,16 +255,14 @@ def printTab(data_list):
 #   printColor(score)
 #   return result_list
 
-def printColor(score):
+def print_color(score):
     val = score
     if val <= 35:
-        print(bcolors.RED + str(val) + "%"+" de reussite" + bcolors.RESET)
+        print(StdoutColors.RED + str(val) + "%" + " de reussite" + StdoutColors.RESET)
     elif val > 35 and val <= 70:
-        print(bcolors.YELLOW + str(val) + "%"+" de reussite" + bcolors.RESET)
+        print(StdoutColors.YELLOW + str(val) + "%" + " de reussite" + StdoutColors.RESET)
     else:
-        print(bcolors.GREEN + str(val) + "%"+" de reussite" + bcolors.RESET)
-
-
+        print(StdoutColors.GREEN + str(val) + "%" + " de reussite" + StdoutColors.RESET)
 
 
 # def checkLettre(lettreAlgo, lettreImage):
@@ -332,7 +305,7 @@ def printColor(score):
 #           return True
 
 def findLettre(lettreImage, lettreAlgo, CSV_data):
-    coord = [0,0]
+    coord = [0, 0]
     for i in CSV_data[0]:
         if i == lettreImage:
             coord[0] = CSV_data[0].index(lettreImage)
@@ -341,34 +314,40 @@ def findLettre(lettreImage, lettreAlgo, CSV_data):
             coord[1] = i
     return coord
 
+
 def inc(coord, matrice):
     nb = int(matrice[coord[0]][coord[1]])
     nb += 1
     matrice[coord[0]][coord[1]] = nb
 
+
 if __name__ == "__main__":
+    reader = easyocr.Reader(['en'])  # need to run only once to load model into memory
     # Overture du CSV
     csv_file = open('matrice.csv', encoding='ISO-8859-1')
     CSV_data = csv.reader(csv_file, delimiter=';')
     data_list = list(CSV_data)
 
-    #Ouverture du fichier lettre.json
+    # Ouverture du fichier lettre.json
     json_file = open('lettre.json')
     json_data = json.load(json_file)
 
     listefont = get_available_fonts()
-    #print(json_data)
+    # print(json_data)
 
     result_list = {}
     data = {}
 
-    #Coefficient d'efficacité moyen de chaque font 
+    # Coefficient d'efficacité moyen de chaque font
 
-    #Coefficient d'efficacité moyen de chaque color
-    listecolor = ["red", "blue", "green", "yellow"]#{'Bleu': 1, 'Rouge': 1, 'Jaune': 1, 'Vert': 1} 
+    # Coefficient d'efficacité moyen de chaque color
+    listecolor = ["red", "blue", "green", "yellow"]  # {'Bleu': 1, 'Rouge': 1, 'Jaune': 1, 'Vert': 1}
 
-    #Coefficient d'efficacité moyen de chaque lettre
-    listeLettres = ['a', 'z', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p', 'm', 'l', 'k', 'j', 'h', 'g', 'f', 'd', 's', 'q', 'w', 'x', 'c', 'v', 'b', 'n', 'A', 'Z', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P', 'M', 'L', 'K', 'J', 'H', 'G', 'F', 'D', 'S', 'Q', 'W', 'X', 'C', 'V', 'B', 'N', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9']
+    # Coefficient d'efficacité moyen de chaque lettre
+    listeLettres = ['a', 'z', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p', 'm', 'l', 'k', 'j', 'h', 'g', 'f', 'd', 's', 'q',
+                    'w', 'x', 'c', 'v', 'b', 'n', 'A', 'Z', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P', 'M', 'L', 'K', 'J',
+                    'H', 'G', 'F', 'D', 'S', 'Q', 'W', 'X', 'C', 'V', 'B', 'N', '0', '1', '2', '3', '4', '5', '6', '7',
+                    '8', '9']
 
     for letter in listeLettres:
         font_data = {}
@@ -380,15 +359,13 @@ if __name__ == "__main__":
             font_data[font] = color_data
         data[letter] = font_data
 
-
     print(json.dumps(data, indent=4))
-
 
     compteur = 0
     init_image(listecolor, listefont)
-    #print(calculBestRapport(listecolor, listefont, json_data))
-    while compteur < 4: #Condition d'arret de l'algo
-        print("\n\n\n\n\n tour numero "+str(compteur)+"\n\n\n\n\n")
+    # print(calculBestRapport(listecolor, listefont, json_data))
+    while compteur < 4:  # Condition d'arret de l'algo
+        print("\n\n\n\n\n tour numero " + str(compteur) + "\n\n\n\n\n")
         listeFichiers = evaluation(data_list, data)
         print("liste resultat = " + str(listeFichiers))
         listeFichiers = selection(listeFichiers)
