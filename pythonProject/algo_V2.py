@@ -26,32 +26,35 @@ def init_image(colors, fonts):
         get_new_captcha(path, text=text, color=color, font=font)
 
 
-def levenshtein(stringImage, stringOCR,
+def levenshtein(string_image, string_OCR,
                 data_list):  # marche ausssi avec len(image_text) - nbLettreJuste mais comme ca on peut modifier le score plus facilement
     print("levensthein")
     score = 0
-    original_length = len(stringImage)
-    OCR_length = len(stringOCR)
+    original_length = len(string_image)
+    OCR_length = len(string_OCR)
     score += abs(original_length - OCR_length)
-    image_text = list(stringImage[0])
-    OCR_text = list(stringOCR)
+
+    image_text = list(string_image[0])
+    OCR_text = list(string_OCR)
     same_letter = 0
     while len(OCR_text) != 0:
         cpt = 0
         while cpt < len(image_text):
             if OCR_text[0] == image_text[cpt]:
-                coord = findLettre(OCR_text[0], image_text[cpt], data_list)
+                coord = find_letter(OCR_text[0], image_text[cpt], data_list)
                 inc(coord, data_list)
                 image_text.pop(cpt)
                 cpt = len(image_text)
                 same_letter += 1
-                print(stringImage)
-                data[image_text[0]][stringImage[2]][stringImage[1]] += 17000000
+                print(string_image)
+                print("imag_text, string_image = ", image_text, string_image)
+                data[OCR_text[0]][string_image[2]][string_image[1]] += 1
             else:
                 cpt += 1
             if cpt == len(image_text):
                 OCR_text.pop(0)
-    score += (len(list(stringOCR)) - same_letter)
+
+    score += (len(list(string_OCR)) - same_letter)
     print("score", score)
     return score
 
@@ -78,10 +81,10 @@ def levenshtein(stringImage, stringOCR,
 #                   cpt += 1
 #   return cptcolor/cpt
 
-# def calculBestRapport(listecolor, listefont, json_data):
+# def calculBestRapport(liste_color, liste_font, json_data):
 #   bestRapport = 1
-#   for color in listecolor:
-#       for font in listefont:
+#   for color in liste_color:
+#       for font in liste_font:
 #           rapport = rapportcolorfont(color, font, json_data)
 #           print(rapport)
 #           if rapport < bestRapport:
@@ -142,7 +145,7 @@ def modify_string(string):
                    '8', '9']
     for i in range(randint(1, 3)):
         lettre = random.choice(letter_list)
-        nb = randint(len(string_list))
+        nb = randint(0, len(string_list) - 1)
         print(string_list[nb])
         string_list[nb] = lettre
     for i in range(len(string_list)):
@@ -155,7 +158,7 @@ def modify_string(string):
 #   data[-1] = data[-1][:-4]    
 #   return data
 
-def mutation(listecolor, listefont, files_list):
+def mutation(liste_color, liste_font, files_list):
     print("mutation")
     print(files_list)
     liste = ["color", "lettre", "font"]
@@ -165,7 +168,7 @@ def mutation(listecolor, listefont, files_list):
         delete_files_with_extension_from_path('./Image/test/', 'png')
         for i in range(len(files_list)):
             print("new captcha")
-            color = random.choice(listecolor)
+            color = random.choice(liste_color)
             path = "./Image/test/" + files_list[i][0] + "_" + color + "_" + files_list[i][2]
             print(path)
             get_new_captcha(path, text=files_list[i][0], color=color, font=files_list[i][2] + ".ttf")
@@ -186,13 +189,13 @@ def mutation(listecolor, listefont, files_list):
         print(files_list)
         for i in range(len(files_list)):
             print("new captcha")
-            font = random.choice(listefont)
+            font = random.choice(liste_font)
             path = "./Image/test/" + files_list[i][0] + "_" + files_list[i][1] + "_" + font
             print(path)
             get_new_captcha(path, text=files_list[i][0], color=files_list[i][1], font=font)
 
 
-def printTab(data_list):
+def print_tab(data_list):
     for line in data_list:
         string = ""
         for elem in line:
@@ -222,7 +225,7 @@ def printTab(data_list):
 #       while cpt2 < orginal_length: #parcourt le text original qui apparait sur l'image
 #           # verifie si la lettre de l'algo et celle de l'image sont les mêmes
 #           if algo[cpt] == original[cpt2]:
-#               coord = findLettre(algo[cpt], original[cpt2], data_list)
+#               coord = find_letter(algo[cpt], original[cpt2], data_list)
 #               inc(coord, data_list)
 #               print("les lettre sont similaires : " + algo[cpt])
 #               nbLettreSimilaire +=1
@@ -234,7 +237,7 @@ def printTab(data_list):
 #               cpt2 = orginal_length
 #           # verifie si la lettre de l'algo et celle de l'image se ressemblent
 #           elif checkLettre(algo[cpt], original[cpt2]):
-#               coord = findLettre(algo[cpt], original[cpt2], data_list)
+#               coord = find_letter(algo[cpt], original[cpt2], data_list)
 #               inc(coord, data_list)
 #               print(algo[cpt] + " ressemble à " + original[cpt2])
 #               lettreRessemblante += 1
@@ -252,7 +255,7 @@ def printTab(data_list):
 #   result_list[textOriginal] = score
 #   print("Nombre de lettre similaires = " + str(nbLettreSimilaire))
 #   print("Nombre de lettres qui se ressemblent = " + str(lettreRessemblante))
-#   printColor(score)
+#   print_color(score)
 #   return result_list
 
 def print_color(score):
@@ -304,7 +307,7 @@ def print_color(score):
 #       if lettre == tab[k]:
 #           return True
 
-def findLettre(lettreImage, lettreAlgo, CSV_data):
+def find_letter(lettreImage, lettreAlgo, CSV_data):
     coord = [0, 0]
     for i in CSV_data[0]:
         if i == lettreImage:
@@ -321,6 +324,30 @@ def inc(coord, matrice):
     matrice[coord[0]][coord[1]] = nb
 
 
+def find_best_score(listeLettres, liste_font, liste_color, data):
+    list_score = []
+    for letter in data:
+        # print(letter, type(letter))
+        for font in data[letter]:
+            # print(font, type(font))
+            for color, value in data[letter][font].items():
+                # print(color, value, type(color), type(value))
+                if len(list_score) < 10:
+                    score = value
+                    new_item = [letter, font, color, score]
+                    list_score.append(new_item)
+                    # print(list_score)
+                else:
+                    for i in range(len(list_score)):
+                        # print(list_score, i)
+                        if value > list_score[i][3] and len(list_score[i]) == 4:
+                            print("changement de score")
+                            print(list_score, letter, font, color, i)
+                            list_score[i] = [letter, font, color, value]
+                            break
+    return list_score
+
+
 if __name__ == "__main__":
     reader = easyocr.Reader(['en'])  # need to run only once to load model into memory
     # Overture du CSV
@@ -332,7 +359,7 @@ if __name__ == "__main__":
     json_file = open('lettre.json')
     json_data = json.load(json_file)
 
-    listefont = get_available_fonts()
+    liste_font = get_available_fonts()
     # print(json_data)
 
     result_list = {}
@@ -341,7 +368,7 @@ if __name__ == "__main__":
     # Coefficient d'efficacité moyen de chaque font
 
     # Coefficient d'efficacité moyen de chaque color
-    listecolor = ["red", "blue", "green", "yellow"]  # {'Bleu': 1, 'Rouge': 1, 'Jaune': 1, 'Vert': 1}
+    liste_color = ["red", "blue", "green", "yellow"]  # {'Bleu': 1, 'Rouge': 1, 'Jaune': 1, 'Vert': 1}
 
     # Coefficient d'efficacité moyen de chaque lettre
     listeLettres = ['a', 'z', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p', 'm', 'l', 'k', 'j', 'h', 'g', 'f', 'd', 's', 'q',
@@ -351,19 +378,20 @@ if __name__ == "__main__":
 
     for letter in listeLettres:
         font_data = {}
-        for font in listefont:
+        for font in liste_font:
             font = font[:-4]
             color_data = {}
-            for color in listecolor:
+            for color in liste_color:
                 color_data[color] = 0
             font_data[font] = color_data
         data[letter] = font_data
+    print(len(data))
 
-    print(json.dumps(data, indent=4))
+    # print(json.dumps(data, indent=4))
 
     compteur = 0
-    init_image(listecolor, listefont)
-    # print(calculBestRapport(listecolor, listefont, json_data))
+    init_image(liste_color, liste_font)
+    # print(calculBestRapport(liste_color, liste_font, json_data))
     while compteur < 4:  # Condition d'arret de l'algo
         print("\n\n\n\n\n tour numero " + str(compteur) + "\n\n\n\n\n")
         listeFichiers = evaluation(data_list, data)
@@ -371,10 +399,15 @@ if __name__ == "__main__":
         listeFichiers = selection(listeFichiers)
         sorted(result_list.items(), key=lambda t: t[1])
         print("liste resultat apres selection = " + str(listeFichiers))
-        mutation(listecolor, listefont, listeFichiers)
+        # print(find_best_score(listeLettres, liste_font, liste_color, data))
+        mutation(liste_color, liste_font, listeFichiers)
         for root, dirs, files in os.walk("./Image/test/"):
             print("liste des fichier apres mutation ", files)
         compteur += 1
+        # find_best_score(listeLettres, liste_font, liste_color)
+        # print(json.dumps(data, indent=4))
+        # print_tab(data_list)
     print(json.dumps(data, indent=4))
-    printTab(data_list)
+    print_tab(data_list)
     print(result_list)
+    print(find_best_score(listeLettres, liste_font, liste_color, data))
