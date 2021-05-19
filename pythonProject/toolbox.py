@@ -82,14 +82,14 @@ def get_available_fonts():
     return None
 
 
-def get_random_string(length):
+def get_random_string(length, allowed_characters=string.ascii_letters + string.digits):
     """
     Generate random string from letters & digits
     :param length: length of the random string
+    :param allowed_characters: Allowed characters in the string (ascii letters and digits if the argument is not provided)
     :return: random string
     """
     # With combination of lower and upper case
-    allowed_characters = string.ascii_letters + string.digits  # + string.punctuation
     generated_string = "".join(random.choice(allowed_characters) for i in range(8))
     return generated_string
 
