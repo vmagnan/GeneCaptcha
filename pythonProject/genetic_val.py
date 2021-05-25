@@ -38,7 +38,7 @@ def initialise(number, _colors, _fonts):
 
 def evaluate(captchas):
     for captcha in captchas:
-        if captcha.value_easyocr != -1 or captcha.value_tesseract != -1:
+        if captcha.value_easyocr == -1 or captcha.value_tesseract == -1:
             tesseract_string = get_string_ocr_pytesseract(captcha.path)
             easyocr_string = get_string_ocr_easyocr(captcha.path, READER)
             captcha.value_tesseract = levenshtein_distance(tesseract_string, captcha.text)
