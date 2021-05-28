@@ -209,9 +209,9 @@ def save_optimized_population(_captchas: list[Captcha], _path: string):
     :return:
     """
     for _captcha in _captchas:
-        _captcha.path = _path + "_".join([_captcha.text, _captcha.txt_color, _captcha.bg_color, _captcha.f])
+        _captcha.path = _path + "_".join([_captcha.text, _captcha.txt_color, _captcha.bg_color, _captcha.font])
         get_new_captcha(_captcha.path, text=_captcha.text, color=_captcha.txt_color, background=_captcha.bg_color,
-                        font=_captcha.f, width=WIDTH,
+                        font=_captcha.font, width=WIDTH,
                         height=HEIGHT,
                         font_size=FONT_SIZE)
 
@@ -250,4 +250,4 @@ if __name__ == "__main__":
     Iteration required = {iter}
     Time required = {time} seconds
     """.format(iter=iterations, time=time.time() - starting_time))
-    save_optimized_population(crossed_population, "Image/Optimized/1/")
+    save_optimized_population(population, "Image/Optimized/1/")
