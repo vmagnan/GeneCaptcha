@@ -10,49 +10,57 @@ import easyocr
 from PIL import Image
 
 
-def svg_to_png(svg_path):
+def svg_to_png(_svg_path):
     """
     Transform svg to png and save the file to same folder
-    :param svg_path: Path to a svg file
+    :param _svg_path: Path to a svg file
     :return: Nothing
     """
-    cairosvg.svg2png(url=svg_path, write_to=svg_path.replace(".svg", ".png"))
+    cairosvg.svg2png(url=_svg_path, write_to=_svg_path.replace(".svg", ".png"))
 
 
-def get_paths_files_with_extension_from_folder(folder, extension='svg'):
+def get_paths_files_with_extension_from_folder(_folder, _extension='svg'):
     """
-    :param extension: Extension of the files you are searching, default is svg
-    :param folder: Folder in which searching files
+    :param _extension: Extension of the files you are searching, default is svg
+    :param _folder: Folder in which searching files
     :return list of path to svg files without extension:
     """
-    list_paths_to_files = [y for x in os.walk(folder) for y in glob(os.path.join(x[0], '*.' + extension))]
-    for i in range(len(list_paths_to_files)):
-        list_paths_to_files[i] = list_paths_to_files[i].replace("\\", "/")
-    return list_paths_to_files
+    _list_paths_to_files = [y for x in os.walk(_folder) for y in glob(os.path.join(x[0], '*.' + _extension))]
+    for _i in range(len(_list_paths_to_files)):
+        _list_paths_to_files[_i] = _list_paths_to_files[_i].replace("\\", "/")
+    return _list_paths_to_files
 
 
-def delete_files_with_extension_from_path(path, extension):
-    for f in get_paths_files_with_extension_from_folder(path, extension):
-        os.remove(f)
+def delete_files_with_extension_from_path(_path, _extension: string):
+    """
+    Remove files with extension from a folder recursively
+    :param _path: Path to the files to delete
+    :param _extension: Extension type
+    :return: Nothing
+    """
+    # Remove . if it exists in the extension string
+    _extension.replace(".", "")
+    for _file in get_paths_files_with_extension_from_folder(_path, _extension):
+        os.remove(_file)
 
 
-def clear_captcha_svg_string(string):
+def clear_captcha_svg_string(_string):
     """
     Remove '\' everywhere and remove first and last characters
-    :param string:
+    :param _string:
     :return: string
     """
-    string_no_slash = string.replace("\\", "")
-    string_remove_last_char = string_no_slash[:-1]
-    string_remove_first_char = string_remove_last_char[1:]
-    return string_remove_first_char
+    _string_no_slash = _string.replace("\\", "")
+    _string_remove_last_char = _string_no_slash[:-1]
+    _string_remove_first_char = _string_remove_last_char[1:]
+    return _string_remove_first_char
 
 
-def get_new_captcha(path, /, **keywords):
+def get_new_captcha(_path, /, **keywords):
     """
     Requête le serveur nodejs pour générer un captcha
     Exemple d'appel : get_new_captcha("./coucou"+font, text="A38hCNp8", color="green", font=font)
-    :param path: Le chemin de l'image à sauvegarder (Ne pas spécifier l'extension)
+    :param _path: Le chemin de l'image à sauvegarder (Ne pas spécifier l'extension)
     :param keywords: Tableau de paramètres correspondant actuellement aux paramètres nommés : text, color, background, font, width, height, font_size, noise.
     :return: 0 = OK | 1 = Erreur
     """
@@ -62,7 +70,7 @@ def get_new_captcha(path, /, **keywords):
         r = requests.get(url)
         if r.status_code == 200:
             byte_string = clear_captcha_svg_string(r.content.decode("utf8"))
-            cairosvg.svg2png(bytestring=byte_string, write_to=path + ".png")
+            cairosvg.svg2png(bytestring=byte_string, write_to=_path + ".png")
             return 0
     return 1
 
@@ -72,51 +80,51 @@ def get_available_fonts():
     Renvoie les polices disponibles sur le serveur nodejs
     :return: Tableau de font
     """
-    url = "http://localhost:8080/fonts"
-    r = requests.get(url)
-    if r.status_code == 200:
-        array = r.content.decode("utf8")
-        array = array[:-1]
-        array = array[1:]
-        return array.split("/")
+    _url = "http://localhost:8080/fonts"
+    _r = requests.get(_url)
+    if _r.status_code == 200:
+        _array = _r.content.decode("utf8")
+        _array = _array[:-1]
+        _array = _array[1:]
+        return _array.split("/")
     return None
 
 
-def get_random_string(length, allowed_characters=string.ascii_letters + string.digits):
+def get_random_string(_length, _allowed_characters=string.ascii_letters + string.digits):
     """
     Generate random string from letters & digits
-    :param length: length of the random string
-    :param allowed_characters: Allowed characters in the string (ascii letters and digits if the argument is not provided)
+    :param _length: length of the random string
+    :param _allowed_characters: Allowed characters in the string (ascii letters and digits if the argument is not provided)
     :return: random string
     """
     # With combination of lower and upper case
-    generated_string = "".join(random.choice(allowed_characters) for i in range(8))
-    return generated_string
+    _generated_string = "".join(random.choice(_allowed_characters) for i in range(8))
+    return _generated_string
 
 
-def get_string_ocr_pytesseract(image_path):
+def get_string_ocr_pytesseract(_image_path):
     """
     Resolve the string inside an image with pytesseract OCR
-    :param image_path: Path to a png, bmp or jpg image
+    :param _image_path: Path to a png, bmp or jpg image
     :return: string
     """
-    raw_string = pytesseract.image_to_string(Image.open(image_path))
+    _raw_string = pytesseract.image_to_string(Image.open(_image_path))
     # Remove unwanted characters
-    beautified_string = raw_string.replace("\n", "").replace("\x0c", "").replace(" ", "")
-    return beautified_string
+    _beautified_string = _raw_string.replace("\n", "").replace("\x0c", "").replace(" ", "")
+    return _beautified_string
 
 
-def get_string_ocr_easyocr(image_path, reader):
+def get_string_ocr_easyocr(_image_path, _reader):
     """
     Resolve the string inside an image with easyOCR
-    :param image_path: Path to a png, bmp or jpg image
-    :param reader: Initialized reader
+    :param _image_path: Path to a png, bmp or jpg image
+    :param _reader: Initialized reader
     :return: string
     """
-    result = reader.readtext(image_path)
-    array = [x for elem in result for x in elem]
-    if len(array) > 0:
-        return array[1].replace(" ", "")
+    _result = _reader.readtext(_image_path)
+    _array = [x for elem in _result for x in elem]
+    if len(_array) > 0:
+        return _array[1].replace(" ", "")
     return ""
 
 
@@ -126,9 +134,9 @@ if __name__ == "__main__":
     strings_ocr_pytesseract = []
     strings_ocr_easyocr = []
     reader = easyocr.Reader(['en'])
-    for font in fonts:
+    for f in fonts:
         random_string = get_random_string(8)
-        get_new_captcha("./" + random_string, text=random_string, color="green", background="white", font=font,
+        get_new_captcha("./" + random_string, text=random_string, color="green", background="white", font=f,
                         width=600, height=200,
                         font_size=64, noise=1)
         path_img = "./" + random_string + ".png"

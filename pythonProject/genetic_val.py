@@ -1,6 +1,8 @@
+import time
+
 from colorutils import *
 from jellyfish import levenshtein_distance
-import time
+
 from toolbox import *
 
 TEXT_LENGTH = 8
@@ -23,60 +25,73 @@ class Captcha:
         self.value_tesseract = -1
 
 
-def initialise(number, _colors, _fonts):
-    captchas = []
-    for i in range(number):
-        bg_color = random.choice(_colors)
-        txt_color = random.choice(_colors)
-        while bg_color == txt_color:
-            txt_color = random.choice(_colors)
-        font = random.choice(_fonts)
-        text = get_random_string(TEXT_LENGTH)
-        path = "./Image/" + "_".join([text, txt_color, bg_color, font])
-        get_new_captcha(path, text=text, color=txt_color, background=bg_color, font=font, width=WIDTH, height=HEIGHT,
+def initialise(_number: int, _colors: list[string], _fonts: list[string]) -> list[Captcha]:
+    """
+    Initialise N captcha, save them to ./Image and return the corresponding captcha list
+    :param _number: Number of captcha
+    :param _colors: Available colors
+    :param _fonts: Available fonts
+    :return: Captcha list
+    """
+    _captchas = []
+    for i in range(_number):
+        _bg_color = random.choice(_colors)
+        _txt_color = random.choice(_colors)
+        while _bg_color == _txt_color:
+            _txt_color = random.choice(_colors)
+        _font = random.choice(_fonts)
+        _text = get_random_string(TEXT_LENGTH)
+        _path = "./Image/" + "_".join([_text, _txt_color, _bg_color, _font])
+        get_new_captcha(_path, text=_text, color=_txt_color, background=_bg_color, font=_font, width=WIDTH,
+                        height=HEIGHT,
                         font_size=FONT_SIZE)
-        captchas.append(Captcha(text, txt_color, bg_color, font, path))
-    return captchas
+        _captchas.append(Captcha(_text, _txt_color, _bg_color, _font, _path))
+    return _captchas
 
 
-def evaluate(captchas):
-    for captcha in captchas:
-        if captcha.value_easyocr == -1 or captcha.value_tesseract == -1:
-            path = captcha.path + '.png'
-            text = captcha.text
-            tesseract_string = get_string_ocr_pytesseract(path)
-            easyocr_string = get_string_ocr_easyocr(path, READER)
-            captcha.value_tesseract = levenshtein_distance(tesseract_string, text)
-            captcha.value_easyocr = levenshtein_distance(easyocr_string, text)
+def evaluate(_captchas: list[Captcha]):
+    """
+    Evaluate all captchas
+    :param _captchas: Captcha list
+    :return: Nothing
+    """
+    for _captcha in _captchas:
+        if _captcha.value_easyocr == -1 or _captcha.value_tesseract == -1:
+            _path = _captcha.path + '.png'
+            _text = _captcha.text
+            _tesseract_string = get_string_ocr_pytesseract(_path)
+            _easyocr_string = get_string_ocr_easyocr(_path, READER)
+            _captcha.value_tesseract = levenshtein_distance(_tesseract_string, _text)
+            _captcha.value_easyocr = levenshtein_distance(_easyocr_string, _text)
 
 
-def cross_text(text_1: string, text_2: string) -> string:
+def cross_text(_text_1: string, _text_2: string) -> string:
     """
     Cross 2 text from their used characters
-    :param text_1: Text of the 1st captcha
-    :param text_2: Text of the 2nd captcha
-    :return: Random text with allowed characters from text_1 & text_2
+    :param _text_1: Text of the 1st captcha
+    :param _text_2: Text of the 2nd captcha
+    :return: Random text with allowed characters from _text_1 & _text_2
     """
-    union_chars = list(set(text_1).union(set(text_2)))
-    return mutate_text(get_random_string(TEXT_LENGTH, union_chars))
+    _union_chars = list(set(_text_1).union(set(_text_2)))
+    return mutate_text(get_random_string(TEXT_LENGTH, _union_chars))
 
 
-def mutate_text(text: string) -> string:
+def mutate_text(_text: string) -> string:
     """
     Mutate a random single character of text by replacing it by one that doesn't exists in this string
     Idea of improvement : Add the union character set of the two parents as argument, and generates a random character that doesn't appear in this union
-    :param text: Texte to mutate
+    :param _text: Text to mutate
     :return: Maybe a mutated text (1/10 chance)
     """
     if random.randint(1, 10) == 1:
-        position = random.randint(0, len(text) - 1)
-        all_characters = string.ascii_letters + string.digits
-        allowed_characters = list(set(all_characters).difference(set(text)))
+        _position = random.randint(0, len(_text) - 1)
+        _all_characters = string.ascii_letters + string.digits
+        _allowed_characters = list(set(_all_characters).difference(set(_text)))
         # Turn string to list of char because strings are immutable
-        text_characters = list(text)
-        text_characters[position] = random.choice(allowed_characters)
-        text = "".join(text_characters)
-    return text
+        _text_characters = list(_text)
+        _text_characters[_position] = random.choice(_allowed_characters)
+        _text = "".join(_text_characters)
+    return _text
 
 
 def cross_color(color_1_hex: string, color_2_hex: string) -> string:
@@ -85,131 +100,151 @@ def cross_color(color_1_hex: string, color_2_hex: string) -> string:
     :param color_1_hex: Second color in hexadecimal string
     :return: Average color in hexadecimal string
     """
-    r1, g1, b1 = hex_to_rgb(color_1_hex)
-    r2, g2, b2 = hex_to_rgb(color_2_hex)
-    rf = (r1 + r2) / 2
-    gf = (g1 + g2) / 2
-    bf = (b1 + b2) / 2
-    result_hex = rgb_to_hex((rf, gf, bf))
-    return mutate_color(result_hex)
+    _r1, _g1, _b1 = hex_to_rgb(color_1_hex)
+    _r2, _g2, _b2 = hex_to_rgb(color_2_hex)
+    _rf = (_r1 + _r2) / 2
+    _gf = (_g1 + _g2) / 2
+    _bf = (_b1 + _b2) / 2
+    _result_hex = rgb_to_hex((_rf, _gf, _bf))
+    return mutate_color(_result_hex)
 
 
-def mutate_color(color_hex: string) -> string:
+def mutate_color(_color_hex: string) -> string:
     """
     Mutate the color
     1/10 chance to mutate the color
     Offset of 20 for each element
-    :param color_hex: color to mutate in hexadecimal string
+    :param _color_hex: color to mutate in hexadecimal string
     :return: mutated color in hexadecimal string
     """
     if random.randint(1, 10) == 1:
-        tuple_rgb = hex_to_rgb(color_hex)
-        for v in tuple_rgb:
-            v = v + random.randint(-10, 10)
-            if v < 0:
-                v = 0
-            if v > 255:
-                v = 255
-        color_hex = rgb_to_hex(tuple_rgb)
-    return color_hex
+        _tuple_rgb = hex_to_rgb(_color_hex)
+        for _v in _tuple_rgb:
+            _v = _v + random.randint(-10, 10)
+            if _v < 0:
+                _v = 0
+            if _v > 255:
+                _v = 255
+        _color_hex = rgb_to_hex(_tuple_rgb)
+    return _color_hex
 
 
-def cross_2_captcha(captcha_1: Captcha, captcha_2: Captcha) -> Captcha:
+def cross_2_captcha(_captcha_1: Captcha, _captcha_2: Captcha) -> Captcha:
     """
     Cross 2 captcha attributes to create a new one
-    :param captcha_1: First parent captcha
-    :param captcha_2: Second parent captcha
+    :param _captcha_1: First parent captcha
+    :param _captcha_2: Second parent captcha
     :return: Son captcha
     """
-    text = cross_text(captcha_1.text, captcha_2.text)
-    txt_color = cross_color(captcha_1.txt_color, captcha_2.txt_color)
-    bg_color = cross_color(captcha_1.bg_color, captcha_2.bg_color)
-    font = random.choice([captcha_1.font, captcha_2.font])
-    path = "./Image/Crossed/" + "_".join([text, txt_color, bg_color, font])
-    get_new_captcha(path, text=text, color=txt_color, background=bg_color, font=font, width=WIDTH, height=HEIGHT,
+    _text = cross_text(_captcha_1.text, _captcha_2.text)
+    _txt_color = cross_color(_captcha_1.txt_color, _captcha_2.txt_color)
+    _bg_color = cross_color(_captcha_1.bg_color, _captcha_2.bg_color)
+    _font = random.choice([_captcha_1.font, _captcha_2.font])
+    _path = "./Image/Crossed/" + "_".join([_text, _txt_color, _bg_color, _font])
+    get_new_captcha(_path, text=_text, color=_txt_color, background=_bg_color, font=_font, width=WIDTH, height=HEIGHT,
                     font_size=FONT_SIZE)
-    captcha = Captcha(text, txt_color, bg_color, font, path)
-    return captcha
+    _captcha = Captcha(_text, _txt_color, _bg_color, _font, _path)
+    return _captcha
 
 
-def crossover(captchas: list[Captcha]) -> list[Captcha]:
+def crossover(_captchas: list[Captcha]) -> list[Captcha]:
     """
-    Suffle the list, cross the two last captchas, add the parents and the son to the new list
+    Shuffle the list, cross the two last captchas, add the parents and the son to the new list
     For each available couple : select 2 random captchas from the list, cross them and add the three captchas to the return list
     And then remove the 2 parents from the initial list
-    :param captchas:
+    :param _captchas:
     :return:
     """
-    if not captchas:
+    if not _captchas:
         print("crossover : Population passed is empty")
         return []
-    new_population = []
-    while len(captchas) >= 2 and len(new_population) < POPULATION_SIZE:
+    _new_population = []
+    while len(_captchas) >= 2 and len(_new_population) < POPULATION_SIZE:
         # print(len(captchas))
-        random.shuffle(captchas)
-        parent_1 = captchas.pop()
-        parent_2 = captchas.pop()
-        son = cross_2_captcha(parent_1, parent_2)
-        new_population.append(parent_1)
-        new_population.append(parent_2)
-        new_population.append(son)
-    if len(captchas) == 1 and len(new_population) < POPULATION_SIZE:
-        new_population.append(captchas.pop())
-    return new_population
+        random.shuffle(_captchas)
+        _parent_1 = _captchas.pop()
+        _parent_2 = _captchas.pop()
+        _son = cross_2_captcha(_parent_1, _parent_2)
+        _new_population.append(_parent_1)
+        _new_population.append(_parent_2)
+        _new_population.append(_son)
+    if len(_captchas) == 1 and len(_new_population) < POPULATION_SIZE:
+        _new_population.append(_captchas.pop())
+    return _new_population
 
 
-def selection(captchas):
+def selection(_captchas: list[Captcha]) -> list[Captcha]:
     """
     Select all captcha with a levenshtein distance > THRESHOLD & with a different text color from its background
-    :param captchas: List of captchas to select
-    :return: List of selected captchas
+    :param _captchas: Captcha list
+    :return: List of Selected captchas
     """
-    selected_captchas = []
-    for captcha in captchas:
-        if captcha.value_easyocr > THRESHOLD:
-            if captcha.txt_color != captcha.bg_color:
-                selected_captchas.append(captcha)
-    return selected_captchas
+    _selected_captchas = []
+    for _captcha in _captchas:
+        if _captcha.value_easyocr >= THRESHOLD:
+            if _captcha.txt_color != _captcha.bg_color:
+                _selected_captchas.append(_captcha)
+    return _selected_captchas
 
 
-def is_population_optimized(captchas):
-    if len(captchas) < POPULATION_SIZE:
+def is_population_optimized(_captchas: list[Captcha]) -> bool:
+    """
+    Return true when the population is full and their EasyOCR values are >= THRESHOLD
+    :param _captchas: Captcha list
+    :return:
+    """
+    if len(_captchas) < POPULATION_SIZE:
         return False
-    for captcha in captchas:
-        if captcha.value_easyocr < THRESHOLD:
+    for _captcha in _captchas:
+        if _captcha.value_easyocr < THRESHOLD:
             return False
     return True
 
 
-def save_optimized_population(captchas, path):
-    for c in captchas:
-        c.path = path + "_".join([c.text, c.txt_color, c.bg_color, c.font])
-        get_new_captcha(c.path, text=c.text, color=c.txt_color, background=c.bg_color, font=c.font, width=WIDTH,
+def save_optimized_population(_captchas: list[Captcha], _path: string):
+    """
+    Save all captchas as png to a path
+    :param _captchas: List of captchas
+    :param _path: Path
+    :return:
+    """
+    for _captcha in _captchas:
+        _captcha.path = _path + "_".join([_captcha.text, _captcha.txt_color, _captcha.bg_color, _captcha.f])
+        get_new_captcha(_captcha.path, text=_captcha.text, color=_captcha.txt_color, background=_captcha.bg_color,
+                        font=_captcha.f, width=WIDTH,
                         height=HEIGHT,
                         font_size=FONT_SIZE)
 
 
 if __name__ == "__main__":
     starting_time = time.time()
-    colors = ["#000000", "#808080", "#FFFFFF", "#8B4513", "#FF0000", "#ffa500", "#ffff00", "#008000", "#00ffff",
-              "#0000ff", "#800080", "#ff1493"]
+    colors = ["#000000", "#808080", "#FFFFFF", "#8B4513", "#FF0000", "#FFA500", "#FFFF00", "#008000", "#00FFFF",
+              "#0000FF", "#800080", "#FF1493"]
+    crossed_population = []
     fonts = get_available_fonts()
+    delete_files_with_extension_from_path("./Image/", 'png')
     population = initialise(POPULATION_SIZE, colors, fonts)
     evaluate(population)
     iterations = 0
     while not is_population_optimized(population):
         print("Iteration = {iter}".format(iter=iterations))
+        # Select individuals accordingly to a Threshold
         selected_population = selection(population)
         print("{nb} Selected captcha".format(nb=len(selected_population)))
+        # If there are at least 2 selected individuals, we reproduce them
         if len(selected_population) > 1:
             crossed_population = crossover(selected_population)
+        # Otherwise, we generate new individuals, and append the one selected if it exists
         else:
-            crossed_population = initialise(POPULATION_SIZE, colors, fonts)
+            new_population = initialise(POPULATION_SIZE - len(selected_population), colors, fonts)
+            if len(selected_population) > 1:
+                new_population.append(selected_population.pop())
+            crossed_population = new_population
+        # Evaluate the crossed population
         evaluate(crossed_population)
+        # And so on !
         population = crossed_population
         iterations += 1
-
-
     print("""\
     Optimization of the population :
     Iteration required = {iter}
