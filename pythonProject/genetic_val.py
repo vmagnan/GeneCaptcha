@@ -1,12 +1,15 @@
-from toolbox import *
-from jellyfish import levenshtein_distance
 from colorutils import *
+from jellyfish import levenshtein_distance
+import time
+from toolbox import *
 
 TEXT_LENGTH = 8
 WIDTH = 600
 HEIGHT = 200
 FONT_SIZE = 64
 READER = easyocr.Reader(['en'])
+THRESHOLD = 6
+POPULATION_SIZE = 10
 
 
 class Captcha:
@@ -39,10 +42,12 @@ def initialise(number, _colors, _fonts):
 def evaluate(captchas):
     for captcha in captchas:
         if captcha.value_easyocr == -1 or captcha.value_tesseract == -1:
-            tesseract_string = get_string_ocr_pytesseract(captcha.path)
-            easyocr_string = get_string_ocr_easyocr(captcha.path, READER)
-            captcha.value_tesseract = levenshtein_distance(tesseract_string, captcha.text)
-            captcha.value_easyocr = levenshtein_distance(easyocr_string, captcha.text)
+            path = captcha.path + '.png'
+            text = captcha.text
+            tesseract_string = get_string_ocr_pytesseract(path)
+            easyocr_string = get_string_ocr_easyocr(path, READER)
+            captcha.value_tesseract = levenshtein_distance(tesseract_string, text)
+            captcha.value_easyocr = levenshtein_distance(easyocr_string, text)
 
 
 def cross_text(text_1: string, text_2: string) -> string:
@@ -109,12 +114,12 @@ def mutate_color(color_hex: string) -> string:
     return color_hex
 
 
-def crossover(captcha_1: Captcha, captcha_2: Captcha) -> Captcha:
+def cross_2_captcha(captcha_1: Captcha, captcha_2: Captcha) -> Captcha:
     """
     Cross 2 captcha attributes to create a new one
     :param captcha_1: First parent captcha
     :param captcha_2: Second parent captcha
-    :return: Son captcha OR nothing if bg_color = txt_color
+    :return: Son captcha
     """
     text = cross_text(captcha_1.text, captcha_2.text)
     txt_color = cross_color(captcha_1.txt_color, captcha_2.txt_color)
@@ -123,19 +128,91 @@ def crossover(captcha_1: Captcha, captcha_2: Captcha) -> Captcha:
     path = "./Image/Crossed/" + "_".join([text, txt_color, bg_color, font])
     get_new_captcha(path, text=text, color=txt_color, background=bg_color, font=font, width=WIDTH, height=HEIGHT,
                     font_size=FONT_SIZE)
-    print('''\
-          Crossed from : 
-          Text1 :  {text1}
-          Text2 : {text2}\
-          '''.format(text1=captcha_1.text, text2=captcha_2.text))
+    captcha = Captcha(text, txt_color, bg_color, font, path)
+    return captcha
+
+
+def crossover(captchas: list[Captcha]) -> list[Captcha]:
+    """
+    Suffle the list, cross the two last captchas, add the parents and the son to the new list
+    For each available couple : select 2 random captchas from the list, cross them and add the three captchas to the return list
+    And then remove the 2 parents from the initial list
+    :param captchas:
+    :return:
+    """
+    if not captchas:
+        print("crossover : Population passed is empty")
+        return []
+    new_population = []
+    while len(captchas) >= 2 and len(new_population) < POPULATION_SIZE:
+        # print(len(captchas))
+        random.shuffle(captchas)
+        parent_1 = captchas.pop()
+        parent_2 = captchas.pop()
+        son = cross_2_captcha(parent_1, parent_2)
+        new_population.append(parent_1)
+        new_population.append(parent_2)
+        new_population.append(son)
+    if len(captchas) == 1 and len(new_population) < POPULATION_SIZE:
+        new_population.append(captchas.pop())
+    return new_population
+
+
+def selection(captchas):
+    """
+    Select all captcha with a levenshtein distance > THRESHOLD & with a different text color from its background
+    :param captchas: List of captchas to select
+    :return: List of selected captchas
+    """
+    selected_captchas = []
+    for captcha in captchas:
+        if captcha.value_easyocr > THRESHOLD:
+            if captcha.txt_color != captcha.bg_color:
+                selected_captchas.append(captcha)
+    return selected_captchas
+
+
+def is_population_optimized(captchas):
+    if len(captchas) < POPULATION_SIZE:
+        return False
+    for captcha in captchas:
+        if captcha.value_easyocr < THRESHOLD:
+            return False
+    return True
+
+
+def save_optimized_population(captchas, path):
+    for c in captchas:
+        c.path = path + "_".join([c.text, c.txt_color, c.bg_color, c.font])
+        get_new_captcha(c.path, text=c.text, color=c.txt_color, background=c.bg_color, font=c.font, width=WIDTH,
+                        height=HEIGHT,
+                        font_size=FONT_SIZE)
 
 
 if __name__ == "__main__":
-    number_captchas = 100
+    starting_time = time.time()
     colors = ["#000000", "#808080", "#FFFFFF", "#8B4513", "#FF0000", "#ffa500", "#ffff00", "#008000", "#00ffff",
               "#0000ff", "#800080", "#ff1493"]
     fonts = get_available_fonts()
-    population = initialise(number_captchas, colors, fonts)
-    # evaluate(captchas)
-    for i in range(0, number_captchas, 2):
-        crossover(population[i], population[i + 1])
+    population = initialise(POPULATION_SIZE, colors, fonts)
+    evaluate(population)
+    iterations = 0
+    while not is_population_optimized(population):
+        print("Iteration = {iter}".format(iter=iterations))
+        selected_population = selection(population)
+        print("{nb} Selected captcha".format(nb=len(selected_population)))
+        if len(selected_population) > 1:
+            crossed_population = crossover(selected_population)
+        else:
+            crossed_population = initialise(POPULATION_SIZE, colors, fonts)
+        evaluate(crossed_population)
+        population = crossed_population
+        iterations += 1
+
+
+    print("""\
+    Optimization of the population :
+    Iteration required = {iter}
+    Time required = {time} seconds
+    """.format(iter=iterations, time=time.time() - starting_time))
+    save_optimized_population(crossed_population, "Image/Optimized/1/")
