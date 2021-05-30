@@ -159,17 +159,17 @@ def crossover(_captchas: list[Captcha]) -> list[Captcha]:
         print("crossover : Population passed is empty")
         return []
     _new_population = []
+    # Add all parents to new_population to keep previous selected captchas
+    for _captcha in _captchas:
+        _new_population.append(_captcha)
+    # Add crossed sons
     while len(_captchas) >= 2 and len(_new_population) < POPULATION_SIZE:
-        # print(len(captchas))
         random.shuffle(_captchas)
         _parent_1 = _captchas.pop()
         _parent_2 = _captchas.pop()
         _son = cross_2_captcha(_parent_1, _parent_2)
-        _new_population.append(_parent_1)
-        _new_population.append(_parent_2)
-        _new_population.append(_son)
-    if len(_captchas) == 1 and len(_new_population) < POPULATION_SIZE:
-        _new_population.append(_captchas.pop())
+        if len(_new_population) < POPULATION_SIZE:
+            _new_population.append(_son)
     return _new_population
 
 
@@ -231,6 +231,10 @@ if __name__ == "__main__":
         # Select individuals accordingly to a Threshold
         selected_population = selection(population)
         print("{nb} Selected captcha".format(nb=len(selected_population)))
+        # If population is optimized, we get out of the loop
+        if len(selected_population) >= POPULATION_SIZE:
+            population = selected_population
+            break
         # If there are at least 2 selected individuals, we reproduce them
         if len(selected_population) > 1:
             crossed_population = crossover(selected_population)
