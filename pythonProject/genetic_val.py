@@ -211,6 +211,8 @@ def save_optimized_population(_captchas: list[Captcha], _path: string):
     :param _path: Path
     :return:
     """
+    if _path[-1] != '/':
+        _path = _path + '/'
     for _captcha in _captchas:
         _captcha.path = _path + "_".join([_captcha.text, _captcha.txt_color, _captcha.bg_color, _captcha.font])
         get_new_captcha(_captcha.path, text=_captcha.text, color=_captcha.txt_color, background=_captcha.bg_color,
@@ -298,7 +300,7 @@ def get_optimized_population(_ocr: string, _size: int, _threshold: int, _path: s
         # Otherwise, we generate new individuals, and append the one selected if it exists
         else:
             _new_population = initialise(_size - len(_selected_population), _colors, _fonts)
-            if len(_selected_population) > 1:
+            if len(_selected_population) == 1:
                 _new_population.append(_selected_population.pop())
             _crossed_population = _new_population
         # Evaluate the crossed population
@@ -320,4 +322,4 @@ if __name__ == "__main__":
               "#0000FF", "#800080", "#FF1493"]
     fonts = get_available_fonts()
     get_simple_stats(
-        get_optimized_population("easyOCR", _size=10, _threshold=6, _path="./Results/7", _colors=colors, _fonts=fonts))
+        get_optimized_population("easyOCR", _size=20, _threshold=8, _path="./Results/9", _colors=colors, _fonts=fonts))
