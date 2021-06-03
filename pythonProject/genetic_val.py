@@ -2,14 +2,18 @@ import time
 
 from colorutils import *
 from jellyfish import levenshtein_distance
-
+from enum import Enum
 from toolbox import *
 
 TEXT_LENGTH = 8
 WIDTH = 600
 HEIGHT = 200
 FONT_SIZE = 64
-READER = easyocr.Reader(['en'])
+
+
+class OCR(Enum):
+    EASY_OCR = 1
+    TESSERACT = 2
 
 
 class Captcha:
@@ -19,8 +23,7 @@ class Captcha:
         self.bg_color = bg_color
         self.font = font
         self.path = path
-        self.value_easyocr = -1
-        self.value_tesseract = -1
+        self.ocr_value = -1
 
 
 def initialise(_number: int, _colors: list[string], _fonts: list[string]) -> list[Captcha]:
@@ -47,20 +50,25 @@ def initialise(_number: int, _colors: list[string], _fonts: list[string]) -> lis
     return _captchas
 
 
-def evaluate(_captchas: list[Captcha]):
+def evaluate(_captchas: list[Captcha], _ocr: string, _reader):
     """
     Evaluate all captchas
+    :param _ocr:
+    :param _reader:
     :param _captchas: Captcha list
     :return: Nothing
     """
     for _captcha in _captchas:
-        if _captcha.value_easyocr == -1 or _captcha.value_tesseract == -1:
+        if _captcha.ocr_value == -1:
             _path = _captcha.path + '.png'
             _text = _captcha.text
-            _tesseract_string = get_string_ocr_pytesseract(_path)
-            _easyocr_string = get_string_ocr_easyocr(_path, READER)
-            _captcha.value_tesseract = levenshtein_distance(_tesseract_string, _text)
-            _captcha.value_easyocr = levenshtein_distance(_easyocr_string, _text)
+            if _ocr == OCR.EASY_OCR:
+                _ocr_string = get_string_ocr_easyocr(_path, _reader)
+            elif _ocr == OCR.TESSERACT:
+                _ocr_string = get_string_ocr_pytesseract(_path)
+            else:
+                _ocr_string = None
+            _captcha.ocr_value = levenshtein_distance(_ocr_string, _text)
 
 
 def cross_text(_text_1: string, _text_2: string) -> string:
@@ -181,7 +189,7 @@ def selection(_captchas: list[Captcha], _threshold: int) -> list[Captcha]:
     """
     _selected_captchas = []
     for _captcha in _captchas:
-        if _captcha.value_easyocr >= _threshold:
+        if _captcha.ocr_value >= _threshold:
             if _captcha.txt_color != _captcha.bg_color:
                 _selected_captchas.append(_captcha)
     return _selected_captchas
@@ -198,7 +206,7 @@ def is_population_optimized(_captchas: list[Captcha], _population_size: int, _th
     if len(_captchas) < _population_size:
         return False
     for _captcha in _captchas:
-        if _captcha.value_easyocr < _threshold:
+        if _captcha.ocr_value < _threshold:
             return False
     return True
 
@@ -213,6 +221,8 @@ def save_optimized_population(_captchas: list[Captcha], _path: string):
     """
     if _path[-1] != '/':
         _path = _path + '/'
+    # Delete previous files if exists
+    delete_files_with_extension_from_path(_path, 'png')
     for _captcha in _captchas:
         _captcha.path = _path + "_".join([_captcha.text, _captcha.txt_color, _captcha.bg_color, _captcha.font])
         get_new_captcha(_captcha.path, text=_captcha.text, color=_captcha.txt_color, background=_captcha.bg_color,
@@ -221,7 +231,7 @@ def save_optimized_population(_captchas: list[Captcha], _path: string):
                         font_size=FONT_SIZE)
 
 
-def sort_frequency_dic_by_value_descending(_dic: dict) -> dict:
+def sort_dic_by_value_descending(_dic: dict) -> dict:
     return dict(sorted(_dic.items(), key=lambda item: item[1], reverse=True))
 
 
@@ -253,10 +263,10 @@ def get_simple_stats(_captchas: list[Captcha]):
         else:
             _bg_color_frequency[_captcha.bg_color] = 1
     # Sort frequencies by value and descending
-    _characters_frequency = sort_frequency_dic_by_value_descending(_characters_frequency)
-    _fonts_frequency = sort_frequency_dic_by_value_descending(_fonts_frequency)
-    _txt_color_frequency = sort_frequency_dic_by_value_descending(_txt_color_frequency)
-    _bg_color_frequency = sort_frequency_dic_by_value_descending(_bg_color_frequency)
+    _characters_frequency = sort_dic_by_value_descending(_characters_frequency)
+    _fonts_frequency = sort_dic_by_value_descending(_fonts_frequency)
+    _txt_color_frequency = sort_dic_by_value_descending(_txt_color_frequency)
+    _bg_color_frequency = sort_dic_by_value_descending(_bg_color_frequency)
     print("""\
     Number of captchas : {nb}
     Characters frequency : {chs}
@@ -278,12 +288,15 @@ def retrieve_captcha_from_path(path: string) -> list[Captcha]:
     return _captchas
 
 
-def get_optimized_population(_ocr: string, _size: int, _threshold: int, _path: string, _colors: list[string], _fonts) -> \
+def get_optimized_population(_ocr: OCR, _size: int, _threshold: int, _path: string, _colors: list[string], _fonts) -> \
         list[Captcha]:
+    _reader = None
+    if _ocr == OCR.EASY_OCR:
+        _reader = easyocr.Reader(['en'])
     delete_files_with_extension_from_path("./Image/", 'png')
     _starting_time = time.time()
     _population = initialise(_size, _colors, _fonts)
-    evaluate(_population)
+    evaluate(_population, _ocr, _reader)
     _iterations = 0
     while not is_population_optimized(_population, _size, _threshold):
         print("Iteration = {iter}".format(iter=_iterations))
@@ -304,7 +317,7 @@ def get_optimized_population(_ocr: string, _size: int, _threshold: int, _path: s
                 _new_population.append(_selected_population.pop())
             _crossed_population = _new_population
         # Evaluate the crossed population
-        evaluate(_crossed_population)
+        evaluate(_crossed_population, _ocr, _reader)
         # And so on !
         _population = _crossed_population
         _iterations += 1
@@ -322,4 +335,5 @@ if __name__ == "__main__":
               "#0000FF", "#800080", "#FF1493"]
     fonts = get_available_fonts()
     get_simple_stats(
-        get_optimized_population("easyOCR", _size=20, _threshold=8, _path="./Results/9", _colors=colors, _fonts=fonts))
+        get_optimized_population(_ocr=OCR.EASY_OCR, _size=150, _threshold=9, _path="./Results/12", _colors=colors,
+                                 _fonts=fonts))
