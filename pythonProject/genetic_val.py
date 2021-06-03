@@ -9,23 +9,10 @@ TEXT_LENGTH = 8
 WIDTH = 600
 HEIGHT = 200
 FONT_SIZE = 64
-# READER = easyocr.Reader(['en'])
-THRESHOLD = 6
-POPULATION_SIZE = 10
+READER = easyocr.Reader(['en'])
 
 
 class Captcha:
-    def __init__(self, text, txt_color, bg_color, font, path):
-        self.text = text
-        self.txt_color = txt_color
-        self.bg_color = bg_color
-        self.font = font
-        self.path = path
-        self.value_easyocr = -1
-        self.value_tesseract = -1
-
-
-class Small_Stat:
     def __init__(self, text, txt_color, bg_color, font, path):
         self.text = text
         self.txt_color = txt_color
@@ -158,11 +145,12 @@ def cross_2_captcha(_captcha_1: Captcha, _captcha_2: Captcha) -> Captcha:
     return _captcha
 
 
-def crossover(_captchas: list[Captcha]) -> list[Captcha]:
+def crossover(_captchas: list[Captcha], _population_size: int) -> list[Captcha]:
     """
     Shuffle the list, cross the two last captchas, add the parents and the son to the new list
     For each available couple : select 2 random captchas from the list, cross them and add the three captchas to the return list
     And then remove the 2 parents from the initial list
+    :param _population_size:
     :param _captchas:
     :return:
     """
@@ -174,40 +162,43 @@ def crossover(_captchas: list[Captcha]) -> list[Captcha]:
     for _captcha in _captchas:
         _new_population.append(_captcha)
     # Add crossed sons
-    while len(_captchas) >= 2 and len(_new_population) < POPULATION_SIZE:
+    while len(_captchas) >= 2 and len(_new_population) < _population_size:
         random.shuffle(_captchas)
         _parent_1 = _captchas.pop()
         _parent_2 = _captchas.pop()
         _son = cross_2_captcha(_parent_1, _parent_2)
-        if len(_new_population) < POPULATION_SIZE:
+        if len(_new_population) < _population_size:
             _new_population.append(_son)
     return _new_population
 
 
-def selection(_captchas: list[Captcha]) -> list[Captcha]:
+def selection(_captchas: list[Captcha], _threshold: int) -> list[Captcha]:
     """
     Select all captcha with a levenshtein distance > THRESHOLD & with a different text color from its background
+    :param _threshold:
     :param _captchas: Captcha list
     :return: List of Selected captchas
     """
     _selected_captchas = []
     for _captcha in _captchas:
-        if _captcha.value_easyocr >= THRESHOLD:
+        if _captcha.value_easyocr >= _threshold:
             if _captcha.txt_color != _captcha.bg_color:
                 _selected_captchas.append(_captcha)
     return _selected_captchas
 
 
-def is_population_optimized(_captchas: list[Captcha]) -> bool:
+def is_population_optimized(_captchas: list[Captcha], _population_size: int, _threshold) -> bool:
     """
     Return true when the population is full and their EasyOCR values are >= THRESHOLD
+    :param _threshold:
+    :param _population_size:
     :param _captchas: Captcha list
     :return:
     """
-    if len(_captchas) < POPULATION_SIZE:
+    if len(_captchas) < _population_size:
         return False
     for _captcha in _captchas:
-        if _captcha.value_easyocr < THRESHOLD:
+        if _captcha.value_easyocr < _threshold:
             return False
     return True
 
@@ -215,6 +206,7 @@ def is_population_optimized(_captchas: list[Captcha]) -> bool:
 def save_optimized_population(_captchas: list[Captcha], _path: string):
     """
     Save all captchas as png to a path
+    Idea of improvement : Only move the files, don't duplicate
     :param _captchas: List of captchas
     :param _path: Path
     :return:
@@ -264,10 +256,12 @@ def get_simple_stats(_captchas: list[Captcha]):
     _txt_color_frequency = sort_frequency_dic_by_value_descending(_txt_color_frequency)
     _bg_color_frequency = sort_frequency_dic_by_value_descending(_bg_color_frequency)
     print("""\
+    Number of captchas : {nb}
     Characters frequency : {chs}
     Fonts frequency : {fts}
     Text-Color frequency : {txtcos}
-    Background-Color frequency : {bgcos}""".format(chs=_characters_frequency, fts=_fonts_frequency,
+    Background-Color frequency : {bgcos}""".format(nb=len(_captchas), chs=_characters_frequency,
+                                                   fts=_fonts_frequency,
                                                    txtcos=_txt_color_frequency, bgcos=_bg_color_frequency))
 
 
@@ -282,43 +276,48 @@ def retrieve_captcha_from_path(path: string) -> list[Captcha]:
     return _captchas
 
 
+def get_optimized_population(_ocr: string, _size: int, _threshold: int, _path: string, _colors: list[string], _fonts) -> \
+        list[Captcha]:
+    delete_files_with_extension_from_path("./Image/", 'png')
+    _starting_time = time.time()
+    _population = initialise(_size, _colors, _fonts)
+    evaluate(_population)
+    _iterations = 0
+    while not is_population_optimized(_population, _size, _threshold):
+        print("Iteration = {iter}".format(iter=_iterations))
+        # Select individuals accordingly to a Threshold
+        _selected_population = selection(_population, _threshold)
+        print("{nb} Selected captcha".format(nb=len(_selected_population)))
+        # If population is optimized, we get out of the loop
+        if len(_selected_population) >= _size:
+            _population = _selected_population
+            break
+        # If there are at least 2 selected individuals, we reproduce them
+        if len(_selected_population) > 1:
+            _crossed_population = crossover(_selected_population, _size)
+        # Otherwise, we generate new individuals, and append the one selected if it exists
+        else:
+            _new_population = initialise(_size - len(_selected_population), _colors, _fonts)
+            if len(_selected_population) > 1:
+                _new_population.append(_selected_population.pop())
+            _crossed_population = _new_population
+        # Evaluate the crossed population
+        evaluate(_crossed_population)
+        # And so on !
+        _population = _crossed_population
+        _iterations += 1
+    print("""\
+    Optimization of the population :
+    Iteration required = {iter}
+    Time required = {time} seconds
+    """.format(iter=_iterations, time=time.time() - _starting_time))
+    save_optimized_population(_population, _path)
+    return _population
+
+
 if __name__ == "__main__":
-    get_simple_stats(retrieve_captcha_from_path("./Results/4"))
-    # starting_time = time.time()
-    # colors = ["#000000", "#808080", "#FFFFFF", "#8B4513", "#FF0000", "#FFA500", "#FFFF00", "#008000", "#00FFFF",
-    #           "#0000FF", "#800080", "#FF1493"]
-    # crossed_population = []
-    # fonts = get_available_fonts()
-    # delete_files_with_extension_from_path("./Image/", 'png')
-    # population = initialise(POPULATION_SIZE, colors, fonts)
-    # evaluate(population)
-    # iterations = 0
-    # while not is_population_optimized(population):
-    #     print("Iteration = {iter}".format(iter=iterations))
-    #     # Select individuals accordingly to a Threshold
-    #     selected_population = selection(population)
-    #     print("{nb} Selected captcha".format(nb=len(selected_population)))
-    #     # If population is optimized, we get out of the loop
-    #     if len(selected_population) >= POPULATION_SIZE:
-    #         population = selected_population
-    #         break
-    #     # If there are at least 2 selected individuals, we reproduce them
-    #     if len(selected_population) > 1:
-    #         crossed_population = crossover(selected_population)
-    #     # Otherwise, we generate new individuals, and append the one selected if it exists
-    #     else:
-    #         new_population = initialise(POPULATION_SIZE - len(selected_population), colors, fonts)
-    #         if len(selected_population) > 1:
-    #             new_population.append(selected_population.pop())
-    #         crossed_population = new_population
-    #     # Evaluate the crossed population
-    #     evaluate(crossed_population)
-    #     # And so on !
-    #     population = crossed_population
-    #     iterations += 1
-    # print("""\
-    # Optimization of the population :
-    # Iteration required = {iter}
-    # Time required = {time} seconds
-    # """.format(iter=iterations, time=time.time() - starting_time))
-    # save_optimized_population(population, "Image/Optimized/1/")
+    colors = ["#000000", "#808080", "#FFFFFF", "#8B4513", "#FF0000", "#FFA500", "#FFFF00", "#008000", "#00FFFF",
+              "#0000FF", "#800080", "#FF1493"]
+    fonts = get_available_fonts()
+    get_simple_stats(
+        get_optimized_population("easyOCR", _size=10, _threshold=6, _path="./Results/7", _colors=colors, _fonts=fonts))
