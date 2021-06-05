@@ -1,4 +1,6 @@
+import json
 import time
+from datetime import datetime
 
 from colorutils import *
 from jellyfish import levenshtein_distance
@@ -12,8 +14,8 @@ FONT_SIZE = 64
 
 
 class OCR(Enum):
-    EASY_OCR = 1
-    TESSERACT = 2
+    EASY_OCR = 'EASY_OCR'
+    TESSERACT = 'TESSERACT'
 
 
 class Captcha:
@@ -24,6 +26,34 @@ class Captcha:
         self.font = font
         self.path = path
         self.ocr_value = -1
+
+
+class Metadata:
+    def __init__(self, ocr: string, size: int, threshold: int, path: string, colors: list[string],
+                 _fonts: list[string], date: string):
+        self.ocr = ocr
+        self.size = size
+        self.threshold = threshold
+        self.path = path
+        self.colors = colors
+        self.fonts = fonts
+        self.iterations = []
+        self.total_time = 0
+        self.date = date
+
+    def add_iteration(self, selected: int, iteration_time: float):
+        self.iterations.append((selected, iteration_time))
+
+    def set_total_time(self, total_time: float):
+        self.total_time = total_time
+
+    def save_as_json(self, path=None):
+        if path is None:
+            path = self.path
+        with open(path + 'metadata.json', 'w', encoding='utf-8') as file:
+            json.dump(self.__dict__, file, ensure_ascii=False, indent=4, default=str)
+        # json_str = json.dumps(self.__dict__)
+        # print(json_str)
 
 
 def initialise(_number: int, _colors: list[string], _fonts: list[string]) -> list[Captcha]:
@@ -195,7 +225,7 @@ def selection(_captchas: list[Captcha], _threshold: int) -> list[Captcha]:
     return _selected_captchas
 
 
-def is_population_optimized(_captchas: list[Captcha], _population_size: int, _threshold) -> bool:
+def is_population_converged(_captchas: list[Captcha], _population_size: int, _threshold) -> bool:
     """
     Return true when the population is full and their EasyOCR values are >= THRESHOLD
     :param _threshold:
@@ -211,7 +241,7 @@ def is_population_optimized(_captchas: list[Captcha], _population_size: int, _th
     return True
 
 
-def save_optimized_population(_captchas: list[Captcha], _path: string):
+def save_converged_population(_captchas: list[Captcha], _path: string):
     """
     Save all captchas as png to a path
     Idea of improvement : Only move the files, don't duplicate
@@ -219,8 +249,6 @@ def save_optimized_population(_captchas: list[Captcha], _path: string):
     :param _path: Path
     :return:
     """
-    if _path[-1] != '/':
-        _path = _path + '/'
     # Delete previous files if exists
     delete_files_with_extension_from_path(_path, 'png')
     for _captcha in _captchas:
@@ -236,45 +264,45 @@ def sort_dic_by_value_descending(_dic: dict) -> dict:
 
 
 def get_simple_stats(_captchas: list[Captcha]):
-    _characters_frequency = {}
-    _fonts_frequency = {}
-    _txt_color_frequency = {}
-    _bg_color_frequency = {}
+    _characters_apparition = {}
+    _fonts_apparition = {}
+    _txt_color_apparition = {}
+    _bg_color_apparition = {}
     for _captcha in _captchas:
         # Calculate the sum of all char used in all captchas
         for _char in _captcha.text:
-            if _char in _characters_frequency:
-                _characters_frequency[_char] += 1
+            if _char in _characters_apparition:
+                _characters_apparition[_char] += 1
             else:
-                _characters_frequency[_char] = 1
+                _characters_apparition[_char] = 1
         # Calculate the sum of all fonts used in all captchas
-        if _captcha.font in _fonts_frequency:
-            _fonts_frequency[_captcha.font] += 1
+        if _captcha.font in _fonts_apparition:
+            _fonts_apparition[_captcha.font] += 1
         else:
-            _fonts_frequency[_captcha.font] = 1
+            _fonts_apparition[_captcha.font] = 1
         # Calculate the sum of all txt colors used in all captchas
-        if _captcha.txt_color in _txt_color_frequency:
-            _txt_color_frequency[_captcha.txt_color] += 1
+        if _captcha.txt_color in _txt_color_apparition:
+            _txt_color_apparition[_captcha.txt_color] += 1
         else:
-            _txt_color_frequency[_captcha.txt_color] = 1
+            _txt_color_apparition[_captcha.txt_color] = 1
         # Calculate the sum of all bg colors used in all captchas
-        if _captcha.bg_color in _bg_color_frequency:
-            _bg_color_frequency[_captcha.bg_color] += 1
+        if _captcha.bg_color in _bg_color_apparition:
+            _bg_color_apparition[_captcha.bg_color] += 1
         else:
-            _bg_color_frequency[_captcha.bg_color] = 1
-    # Sort frequencies by value and descending
-    _characters_frequency = sort_dic_by_value_descending(_characters_frequency)
-    _fonts_frequency = sort_dic_by_value_descending(_fonts_frequency)
-    _txt_color_frequency = sort_dic_by_value_descending(_txt_color_frequency)
-    _bg_color_frequency = sort_dic_by_value_descending(_bg_color_frequency)
+            _bg_color_apparition[_captcha.bg_color] = 1
+    # Sort apparitions by value and descending
+    _characters_apparition = sort_dic_by_value_descending(_characters_apparition)
+    _fonts_apparition = sort_dic_by_value_descending(_fonts_apparition)
+    _txt_color_apparition = sort_dic_by_value_descending(_txt_color_apparition)
+    _bg_color_apparition = sort_dic_by_value_descending(_bg_color_apparition)
     print("""\
     Number of captchas : {nb}
-    Characters frequency : {chs}
-    Fonts frequency : {fts}
-    Text-Color frequency : {txtcos}
-    Background-Color frequency : {bgcos}""".format(nb=len(_captchas), chs=_characters_frequency,
-                                                   fts=_fonts_frequency,
-                                                   txtcos=_txt_color_frequency, bgcos=_bg_color_frequency))
+    Characters apparition : {chs}
+    Fonts apparition : {fts}
+    Text-Color apparition : {txtcos}
+    Background-Color apparition : {bgcos}""".format(nb=len(_captchas), chs=_characters_apparition,
+                                                    fts=_fonts_apparition,
+                                                    txtcos=_txt_color_apparition, bgcos=_bg_color_apparition))
 
 
 def retrieve_captcha_from_path(path: string) -> list[Captcha]:
@@ -288,45 +316,58 @@ def retrieve_captcha_from_path(path: string) -> list[Captcha]:
     return _captchas
 
 
-def get_optimized_population(_ocr: OCR, _size: int, _threshold: int, _path: string, _colors: list[string], _fonts) -> \
+def get_converged_population(_ocr: OCR, _size: int, _threshold: int, _path: string, _colors: list[string],
+                             _fonts: list[string]) -> \
         list[Captcha]:
     _reader = None
+    # Delete all images from the processing folder
+    delete_files_with_extension_from_path("./Image/", 'png')
+    # Initialize EasyOCR Reader if it's the chosen one
     if _ocr == OCR.EASY_OCR:
         _reader = easyocr.Reader(['en'])
-    delete_files_with_extension_from_path("./Image/", 'png')
+    # Add '/' at the end of the path when missing
+    if _path[-1] != '/':
+        _path = _path + '/'
+    # Initialize metadata
+    _metadata = Metadata(_ocr.value, _size, _threshold, _path, _colors, _fonts, datetime.now())
     _starting_time = time.time()
     _population = initialise(_size, _colors, _fonts)
-    evaluate(_population, _ocr, _reader)
     _iterations = 0
-    while not is_population_optimized(_population, _size, _threshold):
+    while not is_population_converged(_population, _size, _threshold):
+        _starting_time_iteration = time.time()
+        # Evaluate the crossed population
+        evaluate(_population, _ocr, _reader)
         print("Iteration = {iter}".format(iter=_iterations))
         # Select individuals accordingly to a Threshold
         _selected_population = selection(_population, _threshold)
-        print("{nb} Selected captcha".format(nb=len(_selected_population)))
-        # If population is optimized, we get out of the loop
-        if len(_selected_population) >= _size:
+        _number_selected = len(_selected_population)
+        print("{nb} Selected captcha".format(nb=_number_selected))
+        # If population has totally converged, we get out of the loop
+        if _number_selected >= _size:
             _population = _selected_population
+            _metadata.add_iteration(_number_selected, time.time() - _starting_time_iteration)
             break
         # If there are at least 2 selected individuals, we reproduce them
-        if len(_selected_population) > 1:
+        if _number_selected > 1:
             _crossed_population = crossover(_selected_population, _size)
         # Otherwise, we generate new individuals, and append the one selected if it exists
         else:
-            _new_population = initialise(_size - len(_selected_population), _colors, _fonts)
-            if len(_selected_population) == 1:
+            _new_population = initialise(_size - _number_selected, _colors, _fonts)
+            if _number_selected == 1:
                 _new_population.append(_selected_population.pop())
             _crossed_population = _new_population
-        # Evaluate the crossed population
-        evaluate(_crossed_population, _ocr, _reader)
         # And so on !
         _population = _crossed_population
+        _metadata.add_iteration(_number_selected, time.time() - _starting_time_iteration)
         _iterations += 1
+    _metadata.set_total_time(time.time() - _starting_time)
+    _metadata.save_as_json()
     print("""\
-    Optimization of the population :
+    Convergence of the population :
     Iteration required = {iter}
     Time required = {time} seconds
-    """.format(iter=_iterations, time=time.time() - _starting_time))
-    save_optimized_population(_population, _path)
+    """.format(iter=_iterations, time=_metadata.total_time))
+    save_converged_population(_population, _path)
     return _population
 
 
@@ -335,5 +376,6 @@ if __name__ == "__main__":
               "#0000FF", "#800080", "#FF1493"]
     fonts = get_available_fonts()
     get_simple_stats(
-        get_optimized_population(_ocr=OCR.EASY_OCR, _size=150, _threshold=9, _path="./Results/12", _colors=colors,
+        get_converged_population(_ocr=OCR.EASY_OCR, _size=20, _threshold=6, _path="./Results/14", _colors=colors,
                                  _fonts=fonts))
+    # get_simple_stats(retrieve_captcha_from_path("./Results/6"))
