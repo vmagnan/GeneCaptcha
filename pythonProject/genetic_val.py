@@ -305,6 +305,16 @@ def get_simple_stats(_captchas: list[Captcha]):
                                                     txtcos=_txt_color_apparition, bgcos=_bg_color_apparition))
 
 
+def summarize(_captchas: list[Captcha], _data_list):
+    # Not working, get doesn't exist on lists
+    for _captcha in _captchas:
+        for _letter in _captcha.text:
+            if _data_list.get([_letter][_captcha.bg_color][_captcha.font]) is not None:
+                _data_list[_letter][_captcha.bg_color][_captcha.font] += 1
+            else:
+                _data_list[_letter][_captcha.bg_color][_captcha.font] = 1
+
+
 def retrieve_captcha_from_path(path: string) -> list[Captcha]:
     _captchas = []
     _files = get_paths_files_with_extension_from_folder(path, "png")
@@ -374,8 +384,10 @@ def get_converged_population(_ocr: OCR, _size: int, _threshold: int, _path: stri
 if __name__ == "__main__":
     colors = ["#000000", "#808080", "#FFFFFF", "#8B4513", "#FF0000", "#FFA500", "#FFFF00", "#008000", "#00FFFF",
               "#0000FF", "#800080", "#FF1493"]
-    fonts = get_available_fonts()
-    get_simple_stats(
-        get_converged_population(_ocr=OCR.EASY_OCR, _size=20, _threshold=6, _path="./Results/14", _colors=colors,
-                                 _fonts=fonts))
-    # get_simple_stats(retrieve_captcha_from_path("./Results/6"))
+    # fonts = get_available_fonts()
+    # get_simple_stats(
+    #     get_converged_population(_ocr=OCR.EASY_OCR, _size=20, _threshold=6, _path="./Results/14", _colors=colors,
+    #                              _fonts=fonts))
+    captchas = retrieve_captcha_from_path("./Results/6")
+    data = []
+    summarize(captchas, data)
