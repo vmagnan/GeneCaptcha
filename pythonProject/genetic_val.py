@@ -1,7 +1,6 @@
 import json
 import time
 from datetime import datetime
-
 from colorutils import *
 from jellyfish import levenshtein_distance
 from enum import Enum
@@ -29,31 +28,40 @@ class Captcha:
 
 
 class Metadata:
-    def __init__(self, ocr: string, size: int, threshold: int, path: string, colors: list[string],
-                 _fonts: list[string], date: string):
-        self.ocr = ocr
-        self.size = size
-        self.threshold = threshold
-        self.path = path
-        self.colors = colors
-        self.fonts = fonts
+    def __init__(self, _ocr: string, _size: int, _threshold: int, _path: string, _colors: list[string],
+                 _fonts: list[string], _date: string):
+        self.ocr = _ocr
+        self.size = _size
+        self.threshold = _threshold
+        self.path = _path
+        self.colors = _colors
+        self.fonts = _fonts
         self.iterations = []
         self.total_time = 0
-        self.date = date
+        self.date = _date
 
     def add_iteration(self, selected: int, iteration_time: float):
+        """
+        Append a new iteration to the attribute list called iterations
+        :param selected: Number of selected individuals
+        :param iteration_time: Time taken for the whole operation ==> Evaluation + Selection + Crossover(only when there are 2 individuals)
+        :return:
+        """
         self.iterations.append((selected, iteration_time))
 
     def set_total_time(self, total_time: float):
         self.total_time = total_time
 
     def save_as_json(self, path=None):
+        """
+        Save all attributes as JSON
+        :param path: Path to the directory where to save the JSON
+        :return: Nothing
+        """
         if path is None:
             path = self.path
         with open(path + 'metadata.json', 'w', encoding='utf-8') as file:
             json.dump(self.__dict__, file, ensure_ascii=False, indent=4, default=str)
-        # json_str = json.dumps(self.__dict__)
-        # print(json_str)
 
 
 def initialise(_number: int, _colors: list[string], _fonts: list[string]) -> list[Captcha]:
@@ -62,7 +70,7 @@ def initialise(_number: int, _colors: list[string], _fonts: list[string]) -> lis
     :param _number: Number of captcha
     :param _colors: Available colors
     :param _fonts: Available fonts
-    :return: Captcha list
+    :return: List of captchas
     """
     _captchas = []
     for i in range(_number):
@@ -85,7 +93,7 @@ def evaluate(_captchas: list[Captcha], _ocr: string, _reader):
     Evaluate all captchas
     :param _ocr:
     :param _reader:
-    :param _captchas: Captcha list
+    :param _captchas: List of captchas
     :return: Nothing
     """
     for _captcha in _captchas:
@@ -130,24 +138,26 @@ def mutate_text(_text: string) -> string:
     return _text
 
 
-def cross_color(color_1_hex: string, color_2_hex: string) -> string:
-    """ Cross colors by making the average of rgb values
-    :param color_2_hex: First color in hexadecimal string
-    :param color_1_hex: Second color in hexadecimal string
+def cross_color_v1(_color_1_hex: string, _color_2_hex: string) -> string:
+    """
+    Cross colors V1
+    By making the average of rgb values
+    :param _color_2_hex: First color in hexadecimal string
+    :param _color_1_hex: Second color in hexadecimal string
     :return: Average color in hexadecimal string
     """
-    _r1, _g1, _b1 = hex_to_rgb(color_1_hex)
-    _r2, _g2, _b2 = hex_to_rgb(color_2_hex)
+    _r1, _g1, _b1 = hex_to_rgb(_color_1_hex)
+    _r2, _g2, _b2 = hex_to_rgb(_color_2_hex)
     _rf = (_r1 + _r2) / 2
     _gf = (_g1 + _g2) / 2
     _bf = (_b1 + _b2) / 2
     _result_hex = rgb_to_hex((_rf, _gf, _bf))
-    return mutate_color(_result_hex)
+    return mutate_color_v1(_result_hex)
 
 
-def mutate_color(_color_hex: string) -> string:
+def mutate_color_v1(_color_hex: string) -> string:
     """
-    Mutate the color
+    Mutate the color V1
     1/10 chance to mutate the color
     Offset of 20 for each element
     :param _color_hex: color to mutate in hexadecimal string
@@ -165,6 +175,46 @@ def mutate_color(_color_hex: string) -> string:
     return _color_hex
 
 
+def cross_color_v2(_color_1_hex: string, _color_2_hex: string, _colors: list[string]) -> string:
+    """
+    Cross colors V1
+    By taking the color with the index in the middle of the 2 parents 
+    :param _color_1_hex: First color in hexadecimal string
+    :param _color_2_hex: Second color in hexadecimal string
+    :param _colors: List of colors
+    :return: 
+    """
+    _pos_color_1 = _colors.index(_color_1_hex)
+    _pos_color_2 = _colors.index(_color_2_hex)
+    # We get the colors between the two index into _sub_colors
+    _sub_colors = []
+    for _i in range(_pos_color_1, _pos_color_2):
+        _sub_colors.append(_colors[_i])
+    _size_sub_color = len(_sub_colors)
+    # Get the middle of the list
+    # if length is pair there are two colors, we choose a random one between them, index len/2 or len/2 -1
+    if _size_sub_color % 2 == 0:
+        return mutate_color_v2(_sub_colors[int(_size_sub_color / 2) - random.choice([0, 1])], _colors)
+    # Otherwise it's the int part of the length divided by 2
+    else:
+        return mutate_color_v2(_sub_colors[int(_size_sub_color / 2)], _colors)
+
+
+def mutate_color_v2(_color_hex: string, _colors: list[string]) -> string:
+    """
+    Mutate the color V2
+    1/10 chance to mutate the color
+    Change the color by the one before or after the actual color index in the list
+    :param _color_hex: Color to mutate
+    :param _colors: List of colors
+    :return:
+    """
+    if random.randint(1, 10) == 1:
+        _pos_color = _colors.index(_color_hex)
+        _color_hex = _colors[_pos_color + random.choice([-1, 1])]
+    return _color_hex
+
+
 def cross_2_captcha(_captcha_1: Captcha, _captcha_2: Captcha) -> Captcha:
     """
     Cross 2 captcha attributes to create a new one
@@ -173,8 +223,8 @@ def cross_2_captcha(_captcha_1: Captcha, _captcha_2: Captcha) -> Captcha:
     :return: Son captcha
     """
     _text = cross_text(_captcha_1.text, _captcha_2.text)
-    _txt_color = cross_color(_captcha_1.txt_color, _captcha_2.txt_color)
-    _bg_color = cross_color(_captcha_1.bg_color, _captcha_2.bg_color)
+    _txt_color = cross_color_v1(_captcha_1.txt_color, _captcha_2.txt_color)
+    _bg_color = cross_color_v1(_captcha_1.bg_color, _captcha_2.bg_color)
     _font = random.choice([_captcha_1.font, _captcha_2.font])
     _path = "./Image/Crossed/" + "_".join([_text, _txt_color, _bg_color, _font])
     get_new_captcha(_path, text=_text, color=_txt_color, background=_bg_color, font=_font, width=WIDTH, height=HEIGHT,
@@ -213,8 +263,8 @@ def crossover(_captchas: list[Captcha], _population_size: int) -> list[Captcha]:
 def selection(_captchas: list[Captcha], _threshold: int) -> list[Captcha]:
     """
     Select all captcha with a levenshtein distance > THRESHOLD & with a different text color from its background
-    :param _threshold:
-    :param _captchas: Captcha list
+    :param _threshold: Threshold
+    :param _captchas: List of captchas
     :return: List of Selected captchas
     """
     _selected_captchas = []
@@ -228,9 +278,9 @@ def selection(_captchas: list[Captcha], _threshold: int) -> list[Captcha]:
 def is_population_converged(_captchas: list[Captcha], _population_size: int, _threshold) -> bool:
     """
     Return true when the population is full and their EasyOCR values are >= THRESHOLD
-    :param _threshold:
-    :param _population_size:
-    :param _captchas: Captcha list
+    :param _threshold: Threshold
+    :param _population_size: Size of the population
+    :param _captchas: List of Captchas
     :return:
     """
     if len(_captchas) < _population_size:
@@ -244,6 +294,7 @@ def is_population_converged(_captchas: list[Captcha], _population_size: int, _th
 def save_converged_population(_captchas: list[Captcha], _path: string):
     """
     Save all captchas as png to a path
+    Be careful, this function also delete the png already located to the path !
     Idea of improvement : Only move the files, don't duplicate
     :param _captchas: List of captchas
     :param _path: Path
@@ -260,10 +311,20 @@ def save_converged_population(_captchas: list[Captcha], _path: string):
 
 
 def sort_dic_by_value_descending(_dic: dict) -> dict:
+    """
+    Sort dictionary by value and descending
+    :param _dic:
+    :return:
+    """
     return dict(sorted(_dic.items(), key=lambda item: item[1], reverse=True))
 
 
 def get_simple_stats(_captchas: list[Captcha]):
+    """
+    Print the occurrence of each captcha parameter : Letter, text color, background color, font
+    :param _captchas:
+    :return:
+    """
     _characters_apparition = {}
     _fonts_apparition = {}
     _txt_color_apparition = {}
@@ -316,6 +377,11 @@ def summarize(_captchas: list[Captcha], _data_list):
 
 
 def retrieve_captcha_from_path(path: string) -> list[Captcha]:
+    """
+    Retrieve the list of captcha located in a specific path
+    :param path: Path
+    :return: List of captchas
+    """
     _captchas = []
     _files = get_paths_files_with_extension_from_folder(path, "png")
     for _file in _files:
@@ -326,9 +392,19 @@ def retrieve_captcha_from_path(path: string) -> list[Captcha]:
     return _captchas
 
 
-def get_converged_population(_ocr: OCR, _size: int, _threshold: int, _path: string, _colors: list[string],
-                             _fonts: list[string]) -> \
+def generate_converged_population(_ocr: OCR, _size: int, _threshold: int, _path: string, _colors: list[string],
+                                  _fonts: list[string]) -> \
         list[Captcha]:
+    """
+    Generate a converged population with a genetic algorithm
+    :param _ocr: OCR you want to choose (OCR.EASY_OCR or OCR.TESSERACT)
+    :param _size: Size of the population
+    :param _threshold: Threshold, all captcha with their levenshtein distance >= threshold will be selected
+    :param _path: Path to save the generated population
+    :param _colors: Allowed colors
+    :param _fonts: Allowed fonts
+    :return: List of captchas
+    """
     _reader = None
     # Delete all images from the processing folder
     delete_files_with_extension_from_path("./Image/", 'png')
@@ -390,4 +466,3 @@ if __name__ == "__main__":
     #                              _fonts=fonts))
     captchas = retrieve_captcha_from_path("./Results/6")
     data = []
-    summarize(captchas, data)
