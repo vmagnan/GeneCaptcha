@@ -5,4 +5,4 @@ Include/
 .idea/
 venv/
 pyenv.cfg
-Image/*.png
+Image/**
