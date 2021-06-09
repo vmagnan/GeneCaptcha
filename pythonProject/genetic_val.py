@@ -17,6 +17,11 @@ class OCR(Enum):
     TESSERACT = 'TESSERACT'
 
 
+class CROSSCOLORVERSION(Enum):
+    V1 = 'V1'
+    V2 = 'V2'
+
+
 class Captcha:
     def __init__(self, text, txt_color, bg_color, font, path):
         self.text = text
@@ -191,6 +196,9 @@ def cross_color_v2(_color_1_hex: string, _color_2_hex: string, _colors: list[str
     for _i in range(_pos_color_1, _pos_color_2):
         _sub_colors.append(_colors[_i])
     _size_sub_color = len(_sub_colors)
+    # If the two colors are neighbours <==> _size_sub_color = 0, then choose randomly between the parents
+    if _size_sub_color == 0:
+        return mutate_color_v2(random.choice([_color_1_hex, _color_2_hex]), _colors)
     # Get the middle of the list
     # if length is pair there are two colors, we choose a random one between them, index len/2 or len/2 -1
     if _size_sub_color % 2 == 0:
@@ -215,16 +223,23 @@ def mutate_color_v2(_color_hex: string, _colors: list[string]) -> string:
     return _color_hex
 
 
-def cross_2_captcha(_captcha_1: Captcha, _captcha_2: Captcha) -> Captcha:
+def cross_2_captcha(_captcha_1: Captcha, _captcha_2: Captcha, _colors: list[string],
+                    _cross_color_version: CROSSCOLORVERSION = CROSSCOLORVERSION.V1, ) -> Captcha:
     """
     Cross 2 captcha attributes to create a new one
+    :param _colors: List of colors, needed in the cross_color_v2
     :param _captcha_1: First parent captcha
     :param _captcha_2: Second parent captcha
+    :param _cross_color_version: Version of crosscolor
     :return: Son captcha
     """
     _text = cross_text(_captcha_1.text, _captcha_2.text)
-    _txt_color = cross_color_v1(_captcha_1.txt_color, _captcha_2.txt_color)
-    _bg_color = cross_color_v1(_captcha_1.bg_color, _captcha_2.bg_color)
+    if _cross_color_version == CROSSCOLORVERSION.V2:
+        _txt_color = cross_color_v2(_captcha_1.txt_color, _captcha_2.txt_color, _colors)
+        _bg_color = cross_color_v2(_captcha_1.bg_color, _captcha_2.bg_color, _colors)
+    else:
+        _txt_color = cross_color_v1(_captcha_1.txt_color, _captcha_2.txt_color)
+        _bg_color = cross_color_v1(_captcha_1.bg_color, _captcha_2.bg_color)
     _font = random.choice([_captcha_1.font, _captcha_2.font])
     _path = "./Image/Crossed/" + "_".join([_text, _txt_color, _bg_color, _font])
     get_new_captcha(_path, text=_text, color=_txt_color, background=_bg_color, font=_font, width=WIDTH, height=HEIGHT,
@@ -233,13 +248,16 @@ def cross_2_captcha(_captcha_1: Captcha, _captcha_2: Captcha) -> Captcha:
     return _captcha
 
 
-def crossover(_captchas: list[Captcha], _population_size: int) -> list[Captcha]:
+def crossover(_captchas: list[Captcha], _population_size: int, _colors: list[string],
+              _cross_color_version: CROSSCOLORVERSION = CROSSCOLORVERSION.V1, ) -> list[Captcha]:
     """
     Shuffle the list, cross the two last captchas, add the parents and the son to the new list
     For each available couple : select 2 random captchas from the list, cross them and add the three captchas to the return list
     And then remove the 2 parents from the initial list
-    :param _population_size:
-    :param _captchas:
+    :param _captchas: List of captchas
+    :param _population_size: Size of the population
+    :param _colors: List of colors, needed in the cross_color_v2
+    :param _cross_color_version: Version of the cross color function
     :return:
     """
     if not _captchas:
@@ -254,7 +272,7 @@ def crossover(_captchas: list[Captcha], _population_size: int) -> list[Captcha]:
         random.shuffle(_captchas)
         _parent_1 = _captchas.pop()
         _parent_2 = _captchas.pop()
-        _son = cross_2_captcha(_parent_1, _parent_2)
+        _son = cross_2_captcha(_parent_1, _parent_2, _colors, _cross_color_version)
         if len(_new_population) < _population_size:
             _new_population.append(_son)
     return _new_population
@@ -313,8 +331,8 @@ def save_converged_population(_captchas: list[Captcha], _path: string):
 def sort_dic_by_value_descending(_dic: dict) -> dict:
     """
     Sort dictionary by value and descending
-    :param _dic:
-    :return:
+    :param _dic: Dictionary to sort
+    :return: Sorted dictionary
     """
     return dict(sorted(_dic.items(), key=lambda item: item[1], reverse=True))
 
@@ -322,8 +340,8 @@ def sort_dic_by_value_descending(_dic: dict) -> dict:
 def get_simple_stats(_captchas: list[Captcha]):
     """
     Print the occurrence of each captcha parameter : Letter, text color, background color, font
-    :param _captchas:
-    :return:
+    :param _captchas: List of captchas
+    :return: Nothing
     """
     _characters_apparition = {}
     _fonts_apparition = {}
@@ -393,7 +411,8 @@ def retrieve_captcha_from_path(path: string) -> list[Captcha]:
 
 
 def generate_converged_population(_ocr: OCR, _size: int, _threshold: int, _path: string, _colors: list[string],
-                                  _fonts: list[string]) -> \
+                                  _fonts: list[string],
+                                  _cross_color_version: CROSSCOLORVERSION = CROSSCOLORVERSION.V1) -> \
         list[Captcha]:
     """
     Generate a converged population with a genetic algorithm
@@ -403,6 +422,7 @@ def generate_converged_population(_ocr: OCR, _size: int, _threshold: int, _path:
     :param _path: Path to save the generated population
     :param _colors: Allowed colors
     :param _fonts: Allowed fonts
+    :param _cross_color_version: Version of the cross color function (V1 or V2, check enum)
     :return: List of captchas
     """
     _reader = None
@@ -435,7 +455,7 @@ def generate_converged_population(_ocr: OCR, _size: int, _threshold: int, _path:
             break
         # If there are at least 2 selected individuals, we reproduce them
         if _number_selected > 1:
-            _crossed_population = crossover(_selected_population, _size)
+            _crossed_population = crossover(_selected_population, _size, _colors, _cross_color_version)
         # Otherwise, we generate new individuals, and append the one selected if it exists
         else:
             _new_population = initialise(_size - _number_selected, _colors, _fonts)
@@ -458,11 +478,12 @@ def generate_converged_population(_ocr: OCR, _size: int, _threshold: int, _path:
 
 
 if __name__ == "__main__":
-    colors = ["#000000", "#808080", "#FFFFFF", "#8B4513", "#FF0000", "#FFA500", "#FFFF00", "#008000", "#00FFFF",
-              "#0000FF", "#800080", "#FF1493"]
-    # fonts = get_available_fonts()
-    # get_simple_stats(
-    #     get_converged_population(_ocr=OCR.EASY_OCR, _size=20, _threshold=6, _path="./Results/14", _colors=colors,
-    #                              _fonts=fonts))
-    captchas = retrieve_captcha_from_path("./Results/6")
-    data = []
+    # Pour supprimer rapidement les images/json de certains dossiers
+    # for i in range(25,30):
+    #     delete_files_with_extension_from_path("./Results/" + str(i) + '/', 'png')
+    #     delete_files_with_extension_from_path("./Results/" + str(i) + '/', 'json')
+    colors = ["red", "pink", "purple", "blue", "cyan", "green", "yellow", "orange"]
+    fonts = get_available_fonts()
+    get_simple_stats(
+        generate_converged_population(_ocr=OCR.EASY_OCR, _size=20, _threshold=8, _path="./Results/7", _colors=colors,
+                                      _fonts=fonts, _cross_color_version=CROSSCOLORVERSION.V2))
