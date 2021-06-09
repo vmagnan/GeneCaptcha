@@ -219,7 +219,11 @@ def mutate_color_v2(_color_hex: string, _colors: list[string]) -> string:
     """
     if random.randint(1, 10) == 1:
         _pos_color = _colors.index(_color_hex)
-        _color_hex = _colors[_pos_color + random.choice([-1, 1])]
+        _new_index_color = _pos_color + random.choice([-1, 1])
+        if _new_index_color > len(_colors) - 1:
+            _color_hex = _colors[0]
+        else:
+            _color_hex = _colors[_new_index_color]
     return _color_hex
 
 
@@ -484,6 +488,8 @@ if __name__ == "__main__":
     #     delete_files_with_extension_from_path("./Results/" + str(i) + '/', 'json')
     colors = ["red", "pink", "purple", "blue", "cyan", "green", "yellow", "orange"]
     fonts = get_available_fonts()
-    get_simple_stats(
-        generate_converged_population(_ocr=OCR.EASY_OCR, _size=20, _threshold=8, _path="./Results/7", _colors=colors,
-                                      _fonts=fonts, _cross_color_version=CROSSCOLORVERSION.V2))
+    for i in range(9, 11):
+        get_simple_stats(
+            generate_converged_population(_ocr=OCR.EASY_OCR, _size=100, _threshold=8, _path="./Results/" + str(i),
+                                          _colors=colors,
+                                          _fonts=fonts, _cross_color_version=CROSSCOLORVERSION.V2))
