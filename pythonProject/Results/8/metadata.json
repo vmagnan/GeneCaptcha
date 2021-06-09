@@ -1,0 +1,119 @@
+{
+    "ocr": "EASY_OCR",
+    "size": 100,
+    "threshold": 8,
+    "path": "./Results/8/",
+    "colors": [
+        "red",
+        "pink",
+        "purple",
+        "blue",
+        "cyan",
+        "green",
+        "yellow",
+        "orange"
+    ],
+    "fonts": [
+        "comic-sans-ms.ttf",
+        "DancingScript-VariableFont-wght.ttf",
+        "Duke-Charming DEMO.otf",
+        "GROBOLD.ttf",
+        "Kawaii-Stitch.ttf",
+        "LEMONMILK-Bold.otf",
+        "LEMONMILK-BoldItalic.otf",
+        "LEMONMILK-Light.otf",
+        "LEMONMILK-LightItalic.otf",
+        "LEMONMILK-Medium.otf",
+        "LEMONMILK-MediumItalic.otf",
+        "LEMONMILK-Regular.otf",
+        "LEMONMILK-RegularItalic.otf"
+    ],
+    "iterations": [
+        [
+            5,
+            83.02811431884766
+        ],
+        [
+            5,
+            1.6194744110107422
+        ],
+        [
+            7,
+            1.5844857692718506
+        ],
+        [
+            7,
+            2.268263578414917
+        ],
+        [
+            7,
+            2.4362099170684814
+        ],
+        [
+            9,
+            3.5248560905456543
+        ],
+        [
+            10,
+            3.122986316680908
+        ],
+        [
+            11,
+            3.943720817565918
+        ],
+        [
+            14,
+            4.047990798950195
+        ],
+        [
+            17,
+            5.6311726570129395
+        ],
+        [
+            20,
+            6.224980592727661
+        ],
+        [
+            25,
+            8.557222604751587
+        ],
+        [
+            31,
+            9.4059476852417
+        ],
+        [
+            37,
+            11.801170587539673
+        ],
+        [
+            45,
+            14.184397459030151
+        ],
+        [
+            55,
+            17.205726861953735
+        ],
+        [
+            71,
+            20.95721197128296
+        ],
+        [
+            83,
+            22.31374502182007
+        ],
+        [
+            95,
+            13.10874605178833
+        ],
+        [
+            98,
+            3.8527495861053467
+        ],
+        [
+            100,
+            1.5544958114624023
+        ]
+    ],
+    "total_time": 242.191876411438,
+    "date": "2021-06-09 21:06:03.942462"
+}
