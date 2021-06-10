@@ -379,13 +379,16 @@ def get_simple_stats(_captchas: list[Captcha]):
     _txt_color_apparition = sort_dic_by_value_descending(_txt_color_apparition)
     _bg_color_apparition = sort_dic_by_value_descending(_bg_color_apparition)
     print("""\
+    ----------------------------------------------------
     Number of captchas : {nb}
     Characters apparition : {chs}
     Fonts apparition : {fts}
     Text-Color apparition : {txtcos}
-    Background-Color apparition : {bgcos}""".format(nb=len(_captchas), chs=_characters_apparition,
-                                                    fts=_fonts_apparition,
-                                                    txtcos=_txt_color_apparition, bgcos=_bg_color_apparition))
+    Background-Color apparition : {bgcos}
+    ----------------------------------------------------""".format(nb=len(_captchas), chs=_characters_apparition,
+                                                                   fts=_fonts_apparition,
+                                                                   txtcos=_txt_color_apparition,
+                                                                   bgcos=_bg_color_apparition))
 
 
 def summarize(_captchas: list[Captcha], _data_list):
@@ -398,16 +401,19 @@ def summarize(_captchas: list[Captcha], _data_list):
                 _data_list[_letter][_captcha.bg_color][_captcha.font] = 1
 
 
-def retrieve_captcha_from_path(path: string) -> list[Captcha]:
+def retrieve_captcha_from_path(_path: string) -> list[Captcha]:
     """
     Retrieve the list of captcha located in a specific path
     :param path: Path
     :return: List of captchas
     """
+    # Add '/' at the end of the path when missing
+    if _path[-1] != '/':
+        _path = _path + '/'
     _captchas = []
-    _files = get_paths_files_with_extension_from_folder(path, "png")
+    _files = get_paths_files_with_extension_from_folder(_path, "png")
     for _file in _files:
-        _file_beautified = _file.replace(".png", "").replace(path, "").replace("/", "")
+        _file_beautified = _file.replace(".png", "").replace(_path, "").replace("/", "")
         (_text, _txt_color, _bg_color, _font) = tuple(map(str, _file_beautified.split('_')))
         if _text != "" and _txt_color != "" and _bg_color != "" and _font != "":
             _captchas.append(Captcha(_text, _txt_color, _bg_color, _font, _file))
@@ -487,9 +493,6 @@ if __name__ == "__main__":
     #     delete_files_with_extension_from_path("./Results/" + str(i) + '/', 'png')
     #     delete_files_with_extension_from_path("./Results/" + str(i) + '/', 'json')
     colors = ["red", "pink", "purple", "blue", "cyan", "green", "yellow", "orange"]
-    fonts = get_available_fonts()
-    for i in range(9, 11):
-        get_simple_stats(
-            generate_converged_population(_ocr=OCR.EASY_OCR, _size=100, _threshold=8, _path="./Results/" + str(i),
-                                          _colors=colors,
-                                          _fonts=fonts, _cross_color_version=CROSSCOLORVERSION.V2))
+    # fonts = get_available_fonts()
+    for i in range(7, 11):
+        get_simple_stats(retrieve_captcha_from_path("./Results/" + str(i)))
