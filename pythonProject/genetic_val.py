@@ -391,14 +391,29 @@ def get_simple_stats(_captchas: list[Captcha]):
                                                                    bgcos=_bg_color_apparition))
 
 
-def summarize(_captchas: list[Captcha], _data_list):
+
+def summarize(_captchas: list[Captcha], _data_dict):
     # Not working, get doesn't exist on lists
     for _captcha in _captchas:
         for _letter in _captcha.text:
-            if _data_list.get([_letter][_captcha.bg_color][_captcha.font]) is not None:
-                _data_list[_letter][_captcha.bg_color][_captcha.font] += 1
+            if _data_dict.get(_letter) is not None:
+                if _data_dict[_letter].get(_captcha.bg_color) is not None:
+                    if _data_dict[_letter][_captcha.bg_color].get(_captcha.font) is not None:
+                        _data_dict[_letter][_captcha.bg_color][_captcha.font] += 1
+                    else:
+                        font_add = {_captcha.font: 1}
+                        _data_dict[_letter][_captcha.bg_color].update(font_add)
+                else:
+                    font_add = {_captcha.font: 1}
+                    color_add = {_captcha.bg_color: font_add}
+                    _data_dict[_letter].update(color_add)
             else:
-                _data_list[_letter][_captcha.bg_color][_captcha.font] = 1
+                font_add = {_captcha.font: 1}
+                color_add = {_captcha.bg_color: font_add}
+                letter_add = {_letter: color_add}
+                _data_dict.update(letter_add)
+    #print(_data_dict)
+    return _data_dict
 
 
 def retrieve_captcha_from_path(_path: string) -> list[Captcha]:
