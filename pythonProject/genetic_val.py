@@ -149,6 +149,10 @@ def cross_font(_font1: string, _font2: string) -> string:
     return random.choice(font_name) + "-" + random.choice(font_type)
 
 
+def mutate_font() -> string:
+    if random.randint(1, 1) == 1:
+        font_list = get_available_fonts()
+        return random.choice(font_list)
 
 
 def cross_color_v1(_color_1_hex: string, _color_2_hex: string) -> string:
@@ -520,3 +524,4 @@ if __name__ == "__main__":
         get_simple_stats(retrieve_captcha_from_path("./Results/" + str(i)))
 
     print(cross_font("Kawaii-Stitch.ttf", "LEMONMILK-Bold.odf"))
+    print(mutate_font())
