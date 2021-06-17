@@ -1,0 +1,103 @@
+{
+    "ocr": "EASY_OCR",
+    "size": 100,
+    "threshold": 8,
+    "path": "./Results/7/",
+    "colors": [
+        "red",
+        "pink",
+        "purple",
+        "blue",
+        "cyan",
+        "green",
+        "yellow",
+        "orange"
+    ],
+    "fonts": [
+        "comic-sans-ms.ttf",
+        "DancingScript-VariableFont-wght.ttf",
+        "Duke-Charming DEMO.otf",
+        "GROBOLD.ttf",
+        "Kawaii-Stitch.ttf",
+        "LEMONMILK-Bold.otf",
+        "LEMONMILK-BoldItalic.otf",
+        "LEMONMILK-Light.otf",
+        "LEMONMILK-LightItalic.otf",
+        "LEMONMILK-Medium.otf",
+        "LEMONMILK-MediumItalic.otf",
+        "LEMONMILK-Regular.otf",
+        "LEMONMILK-RegularItalic.otf"
+    ],
+    "iterations": [
+        [
+            7,
+            73.50713276863098
+        ],
+        [
+            7,
+            2.191288948059082
+        ],
+        [
+            8,
+            2.3182475566864014
+        ],
+        [
+            8,
+            2.9780335426330566
+        ],
+        [
+            10,
+            3.080000400543213
+        ],
+        [
+            12,
+            3.8087639808654785
+        ],
+        [
+            14,
+            4.605505704879761
+        ],
+        [
+            18,
+            5.461227655410767
+        ],
+        [
+            24,
+            7.139683246612549
+        ],
+        [
+            31,
+            9.271990776062012
+        ],
+        [
+            43,
+            11.798006057739258
+        ],
+        [
+            56,
+            16.402663946151733
+        ],
+        [
+            75,
+            21.751941204071045
+        ],
+        [
+            93,
+            19.24975275993347
+        ],
+        [
+            99,
+            5.404246807098389
+        ],
+        [
+            99,
+            0.7367603778839111
+        ],
+        [
+            100,
+            0.7857449054718018
+        ]
+    ],
+    "total_time": 192.27942371368408,
+    "date": "2021-06-09 20:40:44.336276"
+}
