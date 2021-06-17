@@ -143,6 +143,14 @@ def mutate_text(_text: string) -> string:
     return _text
 
 
+def cross_font(_font1: string, _font2: string) -> string:
+    font_name: list = [_font1.split("-")[0], _font2.split("-")[0]]
+    font_type: list = [_font1.split("-")[1], _font2.split("-")[1]]
+    return random.choice(font_name) + "-" + random.choice(font_type)
+
+
+
+
 def cross_color_v1(_color_1_hex: string, _color_2_hex: string) -> string:
     """
     Cross colors V1
@@ -391,7 +399,6 @@ def get_simple_stats(_captchas: list[Captcha]):
                                                                    bgcos=_bg_color_apparition))
 
 
-
 def summarize(_captchas: list[Captcha], _data_dict):
     # Not working, get doesn't exist on lists
     for _captcha in _captchas:
@@ -412,7 +419,7 @@ def summarize(_captchas: list[Captcha], _data_dict):
                 color_add = {_captcha.bg_color: font_add}
                 letter_add = {_letter: color_add}
                 _data_dict.update(letter_add)
-    #print(_data_dict)
+    # print(_data_dict)
     return _data_dict
 
 
@@ -511,3 +518,5 @@ if __name__ == "__main__":
     # fonts = get_available_fonts()
     for i in range(7, 11):
         get_simple_stats(retrieve_captcha_from_path("./Results/" + str(i)))
+
+    print(cross_font("Kawaii-Stitch.ttf", "LEMONMILK-Bold.odf"))
