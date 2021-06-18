@@ -78,7 +78,7 @@ def initialise(_number: int, _colors: list[string], _fonts: list[string]) -> lis
     :return: List of captchas
     """
     _captchas = []
-    for i in range(_number):
+    for _i in range(_number):
         _bg_color = random.choice(_colors)
         _txt_color = random.choice(_colors)
         while _bg_color == _txt_color:
@@ -404,7 +404,7 @@ def summarize(_captchas: list[Captcha], _data_list):
 def retrieve_captcha_from_path(_path: string) -> list[Captcha]:
     """
     Retrieve the list of captcha located in a specific path
-    :param path: Path
+    :param _path: Path
     :return: List of captchas
     """
     # Add '/' at the end of the path when missing
@@ -493,6 +493,29 @@ if __name__ == "__main__":
     #     delete_files_with_extension_from_path("./Results/" + str(i) + '/', 'png')
     #     delete_files_with_extension_from_path("./Results/" + str(i) + '/', 'json')
     colors = ["red", "pink", "purple", "blue", "cyan", "green", "yellow", "orange"]
+    colors_extended = ["MediumVioletRed", "DeepPink", "PaleVioletRed", "HotPink", "LightPink", "Pink", "DarkRed", "Red",
+                       "Firebrick", "Crimson", "IndianRed", "LightCoral", "Salmon", "DarkSalmon", "LightSalmon",
+                       "OrangeRed", "Tomato", "DarkOrange", "Coral", "Orange", "DarkKhaki", "Gold", "Khaki",
+                       "PeachPuff", "Yellow", "PaleGoldenrod", "Moccasin", "PapayaWhip", "LightGoldenrodYellow",
+                       "LemonChiffon", "LightYellow", "Maroon", "Brown", "SaddleBrown", "Sienna", "Chocolate",
+                       "DarkGoldenrod", "Peru", "RosyBrown", "Goldenrod", "SandyBrown", "Tan", "Burlywood", "Wheat",
+                       "NavajoWhite", "Bisque", "BlanchedAlmond", "Cornsilk", "DarkGreen", "Green", "DarkOliveGreen",
+                       "ForestGreen", "SeaGreen", "Olive", "OliveDrab", "MediumSeaGreen", "LimeGreen", "Lime",
+                       "SpringGreen", "MediumSpringGreen", "DarkSeaGreen", "MediumAquamarine", "YellowGreen",
+                       "LawnGreen", "Chartreuse", "LightGreen", "GreenYellow", "PaleGreen", "Teal", "DarkCyan",
+                       "LightSeaGreen", "CadetBlue", "DarkTurquoise", "MediumTurquoise", "Turquoise", "Aqua", "Cyan",
+                       "Aquamarine", "PaleTurquoise", "LightCyan", "Navy", "DarkBlue", "MediumBlue", "Blue",
+                       "MidnightBlue", "RoyalBlue", "SteelBlue", "DodgerBlue", "DeepSkyBlue", "CornflowerBlue",
+                       "SkyBlue", "LightSkyBlue", "LightSteelBlue", "LightBlue", "PowderBlue", "Indigo", "Purple",
+                       "DarkMagenta", "DarkViolet", "DarkSlateBlue", "BlueViolet", "DarkOrchid", "Fuchsia", "Magenta",
+                       "SlateBlue", "MediumSlateBlue", "MediumOrchid", "MediumPurple", "Orchid", "Violet", "Plum",
+                       "Thistle", "Lavender", "MistyRose", "AntiqueWhite", "Linen", "Beige", "WhiteSmoke",
+                       "LavenderBlush", "OldLace", "AliceBlue", "Seashell", "GhostWhite", "Honeydew", "FloralWhite",
+                       "Azure", "MintCream", "Snow", "Ivory", "White", "Black", "DarkSlateGray", "DimGray", "SlateGray",
+                       "Gray", "LightSlateGray", "DarkGray", "Silver", "LightGray", "Gainsboro"]
     # fonts = get_available_fonts()
     for i in range(7, 11):
         get_simple_stats(retrieve_captcha_from_path("./Results/" + str(i)))
+    # for i in range(12, 13):
+    #     generate_converged_population(OCR.EASY_OCR, 10, 8, "./Results/" + str(i), colors_extended, fonts,
+    #                                   CROSSCOLORVERSION.V2)
