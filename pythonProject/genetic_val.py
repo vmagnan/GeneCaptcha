@@ -143,6 +143,18 @@ def mutate_text(_text: string) -> string:
     return _text
 
 
+def cross_font(_font1: string, _font2: string) -> string:
+    font_name: list = [_font1.split("-")[0], _font2.split("-")[0]]
+    font_type: list = [_font1.split("-")[1], _font2.split("-")[1]]
+    return random.choice(font_name) + "-" + random.choice(font_type)
+
+
+def mutate_font() -> string:
+    if random.randint(1, 1) == 1:
+        font_list = get_available_fonts()
+        return random.choice(font_list)
+
+
 def cross_color_v1(_color_1_hex: string, _color_2_hex: string) -> string:
     """
     Cross colors V1
@@ -391,14 +403,28 @@ def get_simple_stats(_captchas: list[Captcha]):
                                                                    bgcos=_bg_color_apparition))
 
 
-def summarize(_captchas: list[Captcha], _data_list):
+def summarize(_captchas: list[Captcha], _data_dict):
     # Not working, get doesn't exist on lists
     for _captcha in _captchas:
         for _letter in _captcha.text:
-            if _data_list.get([_letter][_captcha.bg_color][_captcha.font]) is not None:
-                _data_list[_letter][_captcha.bg_color][_captcha.font] += 1
+            if _data_dict.get(_letter) is not None:
+                if _data_dict[_letter].get(_captcha.bg_color) is not None:
+                    if _data_dict[_letter][_captcha.bg_color].get(_captcha.font) is not None:
+                        _data_dict[_letter][_captcha.bg_color][_captcha.font] += 1
+                    else:
+                        font_add = {_captcha.font: 1}
+                        _data_dict[_letter][_captcha.bg_color].update(font_add)
+                else:
+                    font_add = {_captcha.font: 1}
+                    color_add = {_captcha.bg_color: font_add}
+                    _data_dict[_letter].update(color_add)
             else:
-                _data_list[_letter][_captcha.bg_color][_captcha.font] = 1
+                font_add = {_captcha.font: 1}
+                color_add = {_captcha.bg_color: font_add}
+                letter_add = {_letter: color_add}
+                _data_dict.update(letter_add)
+    # print(_data_dict)
+    return _data_dict
 
 
 def retrieve_captcha_from_path(_path: string) -> list[Captcha]:
