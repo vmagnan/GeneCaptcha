@@ -1,6 +1,8 @@
 import json
 import time
 from datetime import datetime
+from operator import attrgetter
+
 from colorutils import *
 from jellyfish import levenshtein_distance
 from enum import Enum
@@ -30,6 +32,7 @@ class Captcha:
         self.font = font
         self.path = path
         self.ocr_value = -1
+        self.prob_max = 0
 
 
 class Metadata:
@@ -103,7 +106,10 @@ def evaluate(_captchas: list[Captcha], _ocr: string, _reader):
     """
     for _captcha in _captchas:
         if _captcha.ocr_value == -1:
-            _path = _captcha.path + '.png'
+            if _captcha.path[-3:] != "png":
+                _path = _captcha.path + '.png'
+            else:
+                _path = _captcha.path
             _text = _captcha.text
             if _ocr == OCR.EASY_OCR:
                 _ocr_string = get_string_ocr_easyocr(_path, _reader)
@@ -294,19 +300,35 @@ def crossover(_captchas: list[Captcha], _population_size: int, _colors: list[str
     return _new_population
 
 
-def selection(_captchas: list[Captcha], _threshold: int) -> list[Captcha]:
+def selection(_captchas: list[Captcha]) -> list[Captcha]:
     """
-    Select all captcha with a levenshtein distance > THRESHOLD & with a different text color from its background
-    :param _threshold: Threshold
+    Select 2 parents with Fitness proportionate selection
     :param _captchas: List of captchas
-    :return: List of Selected captchas
+    :return: Tuple of 2 parents captcha
     """
+    _probs = []
     _selected_captchas = []
-    for _captcha in _captchas:
-        if _captcha.ocr_value >= _threshold:
-            if _captcha.txt_color != _captcha.bg_color:
-                _selected_captchas.append(_captcha)
-    return _selected_captchas
+    _sum_values = sum(_c.ocr_value for _c in _sorted_captchas)
+    _sorted_captchas = sorted(_captchas, key=lambda _captcha: _captcha.ocr_value)
+    # Calcul max proba for each captcha    
+    for _c in _sorted_captchas:
+        _c.prob_max = _previous_prob + (_c.ocr_value/_sum_values)
+        _previous_prob = _c.prob_max
+    # Select parent 1, the parent_2 == parent 1 to get two different parents in next loop
+    random_number = random.random()
+    for _c in _sorted_captchas:
+        if random_number < _c.prob_max:
+            _parent_1 =_c
+            _parent_2 = _c
+            break
+    # Select parent 2, while parent 2 == parent 1 in case the probabilities gives the same parent
+    while _parent_1 == _parent_2 
+        random_number = random.random()
+        for _c in _sorted_captchas:
+            if random_number < _c.prob_max:
+                _parent_2 =_c
+                break
+    return (_parent_1, _parent_2)
 
 
 def is_population_converged(_captchas: list[Captcha], _population_size: int, _threshold) -> bool:
@@ -518,30 +540,37 @@ if __name__ == "__main__":
     # for i in range(25,30):
     #     delete_files_with_extension_from_path("./Results/" + str(i) + '/', 'png')
     #     delete_files_with_extension_from_path("./Results/" + str(i) + '/', 'json')
+    fonts = get_available_fonts()
     colors = ["red", "pink", "purple", "blue", "cyan", "green", "yellow", "orange"]
-    colors_extended = ["MediumVioletRed", "DeepPink", "PaleVioletRed", "HotPink", "LightPink", "Pink", "DarkRed", "Red",
-                       "Firebrick", "Crimson", "IndianRed", "LightCoral", "Salmon", "DarkSalmon", "LightSalmon",
-                       "OrangeRed", "Tomato", "DarkOrange", "Coral", "Orange", "DarkKhaki", "Gold", "Khaki",
-                       "PeachPuff", "Yellow", "PaleGoldenrod", "Moccasin", "PapayaWhip", "LightGoldenrodYellow",
-                       "LemonChiffon", "LightYellow", "Maroon", "Brown", "SaddleBrown", "Sienna", "Chocolate",
-                       "DarkGoldenrod", "Peru", "RosyBrown", "Goldenrod", "SandyBrown", "Tan", "Burlywood", "Wheat",
-                       "NavajoWhite", "Bisque", "BlanchedAlmond", "Cornsilk", "DarkGreen", "Green", "DarkOliveGreen",
-                       "ForestGreen", "SeaGreen", "Olive", "OliveDrab", "MediumSeaGreen", "LimeGreen", "Lime",
-                       "SpringGreen", "MediumSpringGreen", "DarkSeaGreen", "MediumAquamarine", "YellowGreen",
-                       "LawnGreen", "Chartreuse", "LightGreen", "GreenYellow", "PaleGreen", "Teal", "DarkCyan",
-                       "LightSeaGreen", "CadetBlue", "DarkTurquoise", "MediumTurquoise", "Turquoise", "Aqua", "Cyan",
-                       "Aquamarine", "PaleTurquoise", "LightCyan", "Navy", "DarkBlue", "MediumBlue", "Blue",
-                       "MidnightBlue", "RoyalBlue", "SteelBlue", "DodgerBlue", "DeepSkyBlue", "CornflowerBlue",
-                       "SkyBlue", "LightSkyBlue", "LightSteelBlue", "LightBlue", "PowderBlue", "Indigo", "Purple",
-                       "DarkMagenta", "DarkViolet", "DarkSlateBlue", "BlueViolet", "DarkOrchid", "Fuchsia", "Magenta",
-                       "SlateBlue", "MediumSlateBlue", "MediumOrchid", "MediumPurple", "Orchid", "Violet", "Plum",
-                       "Thistle", "Lavender", "MistyRose", "AntiqueWhite", "Linen", "Beige", "WhiteSmoke",
-                       "LavenderBlush", "OldLace", "AliceBlue", "Seashell", "GhostWhite", "Honeydew", "FloralWhite",
-                       "Azure", "MintCream", "Snow", "Ivory", "White", "Black", "DarkSlateGray", "DimGray", "SlateGray",
-                       "Gray", "LightSlateGray", "DarkGray", "Silver", "LightGray", "Gainsboro"]
-    # fonts = get_available_fonts()
-    for i in range(7, 11):
-        get_simple_stats(retrieve_captcha_from_path("./Results/" + str(i)))
-    # for i in range(12, 13):
-    #     generate_converged_population(OCR.EASY_OCR, 10, 8, "./Results/" + str(i), colors_extended, fonts,
-    #                                   CROSSCOLORVERSION.V2)
+    # colors_extended = ["MediumVioletRed", "DeepPink", "PaleVioletRed", "HotPink", "LightPink", "Pink", "DarkRed", "Red",
+    #                    "Firebrick", "Crimson", "IndianRed", "LightCoral", "Salmon", "DarkSalmon", "LightSalmon",
+    #                    "OrangeRed", "Tomato", "DarkOrange", "Coral", "Orange", "DarkKhaki", "Gold", "Khaki",
+    #                    "PeachPuff", "Yellow", "PaleGoldenrod", "Moccasin", "PapayaWhip", "LightGoldenrodYellow",
+    #                    "LemonChiffon", "LightYellow", "Maroon", "Brown", "SaddleBrown", "Sienna", "Chocolate",
+    #                    "DarkGoldenrod", "Peru", "RosyBrown", "Goldenrod", "SandyBrown", "Tan", "Burlywood", "Wheat",
+    #                    "NavajoWhite", "Bisque", "BlanchedAlmond", "Cornsilk", "DarkGreen", "Green", "DarkOliveGreen",
+    #                    "ForestGreen", "SeaGreen", "Olive", "OliveDrab", "MediumSeaGreen", "LimeGreen", "Lime",
+    #                    "SpringGreen", "MediumSpringGreen", "DarkSeaGreen", "MediumAquamarine", "YellowGreen",
+    #                    "LawnGreen", "Chartreuse", "LightGreen", "GreenYellow", "PaleGreen", "Teal", "DarkCyan",
+    #                    "LightSeaGreen", "CadetBlue", "DarkTurquoise", "MediumTurquoise", "Turquoise", "Aqua", "Cyan",
+    #                    "Aquamarine", "PaleTurquoise", "LightCyan", "Navy", "DarkBlue", "MediumBlue", "Blue",
+    #                    "MidnightBlue", "RoyalBlue", "SteelBlue", "DodgerBlue", "DeepSkyBlue", "CornflowerBlue",
+    #                    "SkyBlue", "LightSkyBlue", "LightSteelBlue", "LightBlue", "PowderBlue", "Indigo", "Purple",
+    #                    "DarkMagenta", "DarkViolet", "DarkSlateBlue", "BlueViolet", "DarkOrchid", "Fuchsia", "Magenta",
+    #                    "SlateBlue", "MediumSlateBlue", "MediumOrchid", "MediumPurple", "Orchid", "Violet", "Plum",
+    #                    "Thistle", "Lavender", "MistyRose", "AntiqueWhite", "Linen", "Beige", "WhiteSmoke",
+    #                    "LavenderBlush", "OldLace", "AliceBlue", "Seashell", "GhostWhite", "Honeydew", "FloralWhite",
+    #                    "Azure", "MintCream", "Snow", "Ivory", "White", "Black", "DarkSlateGray", "DimGray", "SlateGray",
+    #                    "Gray", "LightSlateGray", "DarkGray", "Silver", "LightGray", "Gainsboro"]
+    # for i in range(7, 11):
+    #     get_simple_stats(retrieve_captcha_from_path("./Results/" + str(i)))
+    # captchas = generate_converged_population(OCR.EASY_OCR, 10, 8, "./Results/11", colors, fonts,CROSSCOLORVERSION.V2)
+    # get_simple_stats(captchas)
+    captchas = initialise(10, colors, fonts)
+    reader = easyocr.Reader(['en'])
+    start_time = time.time()
+    # evaluate(captchas, OCR.EASY_OCR, reader)
+    print(time.time() - start_time)
+    # new_list = sorted(captchas, key=lambda captcha: captcha.ocr_value)
+    # for captcha in new_list:
+    #     print(captcha.ocr_value)
