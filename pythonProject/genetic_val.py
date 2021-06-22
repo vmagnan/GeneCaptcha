@@ -1,7 +1,6 @@
 import json
 import time
 from datetime import datetime
-from operator import attrgetter
 
 from colorutils import *
 from jellyfish import levenshtein_distance
@@ -25,7 +24,7 @@ class CROSSCOLORVERSION(Enum):
 
 
 class Captcha:
-    def __init__(self, text, txt_color, bg_color, font, path):
+    def __init__(self, text, txt_color, bg_color, font, path, generation):
         self.text = text
         self.txt_color = txt_color
         self.bg_color = bg_color
@@ -33,6 +32,7 @@ class Captcha:
         self.path = path
         self.ocr_value = -1
         self.prob_max = 0
+        self.generation = generation
 
 
 class Metadata:
@@ -92,8 +92,24 @@ def initialise(_number: int, _colors: list[string], _fonts: list[string]) -> lis
         get_new_captcha(_path, text=_text, color=_txt_color, background=_bg_color, font=_font, width=WIDTH,
                         height=HEIGHT,
                         font_size=FONT_SIZE)
-        _captchas.append(Captcha(_text, _txt_color, _bg_color, _font, _path))
+        _captchas.append(Captcha(_text, _txt_color, _bg_color, _font, _path, 0))
     return _captchas
+
+
+def evaluate_single_captcha(_captcha: Captcha, _ocr: string, _reader):
+    if _captcha.ocr_value == -1:
+        if _captcha.path[-3:] != "png":
+            _path = _captcha.path + '.png'
+        else:
+            _path = _captcha.path
+        _text = _captcha.text
+        if _ocr == OCR.EASY_OCR:
+            _ocr_string = get_string_ocr_easyocr(_path, _reader)
+        elif _ocr == OCR.TESSERACT:
+            _ocr_string = get_string_ocr_pytesseract(_path)
+        else:
+            _ocr_string = None
+        _captcha.ocr_value = levenshtein_distance(_ocr_string, _text)
 
 
 def evaluate(_captchas: list[Captcha], _ocr: string, _reader):
@@ -105,19 +121,7 @@ def evaluate(_captchas: list[Captcha], _ocr: string, _reader):
     :return: Nothing
     """
     for _captcha in _captchas:
-        if _captcha.ocr_value == -1:
-            if _captcha.path[-3:] != "png":
-                _path = _captcha.path + '.png'
-            else:
-                _path = _captcha.path
-            _text = _captcha.text
-            if _ocr == OCR.EASY_OCR:
-                _ocr_string = get_string_ocr_easyocr(_path, _reader)
-            elif _ocr == OCR.TESSERACT:
-                _ocr_string = get_string_ocr_pytesseract(_path)
-            else:
-                _ocr_string = None
-            _captcha.ocr_value = levenshtein_distance(_ocr_string, _text)
+        evaluate_single_captcha(_captcha, _ocr, _reader)
 
 
 def cross_text(_text_1: string, _text_2: string) -> string:
@@ -245,33 +249,34 @@ def mutate_color_v2(_color_hex: string, _colors: list[string]) -> string:
     return _color_hex
 
 
-def cross_2_captcha(_captcha_1: Captcha, _captcha_2: Captcha, _colors: list[string],
+def cross_2_captcha(_parents: tuple[Captcha, Captcha], _colors: list[string],
                     _cross_color_version: CROSSCOLORVERSION = CROSSCOLORVERSION.V1, ) -> Captcha:
     """
     Cross 2 captcha attributes to create a new one
+    :param _parents: Tuple of parents
     :param _colors: List of colors, needed in the cross_color_v2
-    :param _captcha_1: First parent captcha
-    :param _captcha_2: Second parent captcha
     :param _cross_color_version: Version of crosscolor
     :return: Son captcha
     """
-    _text = cross_text(_captcha_1.text, _captcha_2.text)
+    _text = cross_text(_parents[0].text, _parents[1].text)
     if _cross_color_version == CROSSCOLORVERSION.V2:
-        _txt_color = cross_color_v2(_captcha_1.txt_color, _captcha_2.txt_color, _colors)
-        _bg_color = cross_color_v2(_captcha_1.bg_color, _captcha_2.bg_color, _colors)
+        _txt_color = cross_color_v2(_parents[0].txt_color, _parents[1].txt_color, _colors)
+        _bg_color = cross_color_v2(_parents[0].bg_color, _parents[1].bg_color, _colors)
+
     else:
-        _txt_color = cross_color_v1(_captcha_1.txt_color, _captcha_2.txt_color)
-        _bg_color = cross_color_v1(_captcha_1.bg_color, _captcha_2.bg_color)
-    _font = random.choice([_captcha_1.font, _captcha_2.font])
+        _txt_color = cross_color_v1(_parents[0].txt_color, _parents[1].txt_color)
+        _bg_color = cross_color_v1(_parents[0].bg_color, _parents[1].bg_color)
+    _font = random.choice([_parents[0].font, _parents[1].font])
     _path = "./Image/Crossed/" + "_".join([_text, _txt_color, _bg_color, _font])
     get_new_captcha(_path, text=_text, color=_txt_color, background=_bg_color, font=_font, width=WIDTH, height=HEIGHT,
                     font_size=FONT_SIZE)
-    _captcha = Captcha(_text, _txt_color, _bg_color, _font, _path)
+    _captcha = Captcha(_text, _txt_color, _bg_color, _font, _path,
+                       max([_parents[0].generation, _parents[1].generation]) + 1)
     return _captcha
 
 
 def crossover(_captchas: list[Captcha], _population_size: int, _colors: list[string],
-              _cross_color_version: CROSSCOLORVERSION = CROSSCOLORVERSION.V1, ) -> list[Captcha]:
+              _cross_color_version: CROSSCOLORVERSION = CROSSCOLORVERSION.V1) -> list[Captcha]:
     """
     Shuffle the list, cross the two last captchas, add the parents and the son to the new list
     For each available couple : select 2 random captchas from the list, cross them and add the three captchas to the return list
@@ -300,35 +305,37 @@ def crossover(_captchas: list[Captcha], _population_size: int, _colors: list[str
     return _new_population
 
 
-def selection(_captchas: list[Captcha]) -> list[Captcha]:
+def selection(_captchas: list[Captcha]) -> (Captcha, Captcha):
     """
-    Select 2 parents with Fitness proportionate selection
+    Select 2 different parents with Fitness proportionate selection
     :param _captchas: List of captchas
     :return: Tuple of 2 parents captcha
     """
     _probs = []
+    _previous_prob = 0
     _selected_captchas = []
-    _sum_values = sum(_c.ocr_value for _c in _sorted_captchas)
+    _parent_1 = _parent_2 = None
     _sorted_captchas = sorted(_captchas, key=lambda _captcha: _captcha.ocr_value)
+    _sum_values = sum(_c.ocr_value for _c in _sorted_captchas)
     # Calcul max proba for each captcha    
     for _c in _sorted_captchas:
-        _c.prob_max = _previous_prob + (_c.ocr_value/_sum_values)
+        _c.prob_max = _previous_prob + (_c.ocr_value / _sum_values)
         _previous_prob = _c.prob_max
     # Select parent 1, the parent_2 == parent 1 to get two different parents in next loop
     random_number = random.random()
     for _c in _sorted_captchas:
         if random_number < _c.prob_max:
-            _parent_1 =_c
+            _parent_1 = _c
             _parent_2 = _c
             break
     # Select parent 2, while parent 2 == parent 1 in case the probabilities gives the same parent
-    while _parent_1 == _parent_2 
+    while _parent_1 == _parent_2:
         random_number = random.random()
         for _c in _sorted_captchas:
             if random_number < _c.prob_max:
-                _parent_2 =_c
+                _parent_2 = _c
                 break
-    return (_parent_1, _parent_2)
+    return _parent_1, _parent_2
 
 
 def is_population_converged(_captchas: list[Captcha], _population_size: int, _threshold) -> bool:
@@ -464,8 +471,20 @@ def retrieve_captcha_from_path(_path: string) -> list[Captcha]:
         _file_beautified = _file.replace(".png", "").replace(_path, "").replace("/", "")
         (_text, _txt_color, _bg_color, _font) = tuple(map(str, _file_beautified.split('_')))
         if _text != "" and _txt_color != "" and _bg_color != "" and _font != "":
-            _captchas.append(Captcha(_text, _txt_color, _bg_color, _font, _file))
+            _captchas.append(Captcha(_text, _txt_color, _bg_color, _font, _file, -1))
     return _captchas
+
+
+def replace_worst_captcha_by_new_captcha(_captchas: list[Captcha], _new_captcha: Captcha):
+    i = 0
+    _worst_index = 0
+    _worst_value = _captchas[0].ocr_value
+    for _c in _captchas:
+        if _c.ocr_value < _worst_value and _c.ocr_value != -1:
+            _worst_value = _c.ocr_value
+            _worst_index = i
+        i += 1
+    _captchas[_worst_index] = _new_captcha
 
 
 def generate_converged_population(_ocr: OCR, _size: int, _threshold: int, _path: string, _colors: list[string],
@@ -503,26 +522,13 @@ def generate_converged_population(_ocr: OCR, _size: int, _threshold: int, _path:
         evaluate(_population, _ocr, _reader)
         print("Iteration = {iter}".format(iter=_iterations))
         # Select individuals accordingly to a Threshold
-        _selected_population = selection(_population, _threshold)
-        _number_selected = len(_selected_population)
-        print("{nb} Selected captcha".format(nb=_number_selected))
+        _parents = selection(_population)
         # If population has totally converged, we get out of the loop
-        if _number_selected >= _size:
-            _population = _selected_population
-            _metadata.add_iteration(_number_selected, time.time() - _starting_time_iteration)
-            break
-        # If there are at least 2 selected individuals, we reproduce them
-        if _number_selected > 1:
-            _crossed_population = crossover(_selected_population, _size, _colors, _cross_color_version)
-        # Otherwise, we generate new individuals, and append the one selected if it exists
-        else:
-            _new_population = initialise(_size - _number_selected, _colors, _fonts)
-            if _number_selected == 1:
-                _new_population.append(_selected_population.pop())
-            _crossed_population = _new_population
-        # And so on !
-        _population = _crossed_population
-        _metadata.add_iteration(_number_selected, time.time() - _starting_time_iteration)
+        _son = cross_2_captcha(_parents, _colors, _cross_color_version)
+        evaluate_single_captcha(_son, _ocr, _reader)
+        if _son.ocr_value >= max(_c.ocr_value for _c in _parents):
+            replace_worst_captcha_by_new_captcha(_population, _son)
+            print("Replaced")
         _iterations += 1
     _metadata.set_total_time(time.time() - _starting_time)
     _metadata.save_as_json()
@@ -564,13 +570,7 @@ if __name__ == "__main__":
     #                    "Gray", "LightSlateGray", "DarkGray", "Silver", "LightGray", "Gainsboro"]
     # for i in range(7, 11):
     #     get_simple_stats(retrieve_captcha_from_path("./Results/" + str(i)))
-    # captchas = generate_converged_population(OCR.EASY_OCR, 10, 8, "./Results/11", colors, fonts,CROSSCOLORVERSION.V2)
-    # get_simple_stats(captchas)
-    captchas = initialise(10, colors, fonts)
-    reader = easyocr.Reader(['en'])
-    start_time = time.time()
-    # evaluate(captchas, OCR.EASY_OCR, reader)
-    print(time.time() - start_time)
-    # new_list = sorted(captchas, key=lambda captcha: captcha.ocr_value)
+    captchas = generate_converged_population(OCR.EASY_OCR, 40, 8, "./Results/Probabilist/1", colors, fonts, CROSSCOLORVERSION.V2)
+    get_simple_stats(captchas)
     # for captcha in new_list:
     #     print(captcha.ocr_value)
