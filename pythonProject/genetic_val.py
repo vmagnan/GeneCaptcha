@@ -89,7 +89,7 @@ def initialise(_number: int, _colors: list[string], _fonts: list[string]) -> lis
         _font = random.choice(_fonts)
         _text = get_random_string(TEXT_LENGTH)
         _path = "./Image/" + "_".join([_text, _txt_color, _bg_color, _font])
-        get_new_captcha(_path, text=_text, color=_txt_color, background=_bg_color, font=_font, width=WIDTH,
+        get_new_captcha(_path, _no_color=1, text=_text, color=_txt_color, background=_bg_color, font=_font, width=WIDTH,
                         height=HEIGHT,
                         font_size=FONT_SIZE)
         _captchas.append(Captcha(_text, _txt_color, _bg_color, _font, _path, 0))
@@ -283,7 +283,8 @@ def cross_2_captcha(_parents: tuple[Captcha, Captcha], _colors: list[string],
         _bg_color = cross_color_v1(_parents[0].bg_color, _parents[1].bg_color)
     _font = random.choice([_parents[0].font, _parents[1].font])
     _path = "./Image/Crossed/" + "_".join([_text, _txt_color, _bg_color, _font])
-    get_new_captcha(_path, text=_text, color=_txt_color, background=_bg_color, font=_font, width=WIDTH, height=HEIGHT,
+    get_new_captcha(_path, _no_color=1, text=_text, color=_txt_color, background=_bg_color, font=_font, width=WIDTH,
+                    height=HEIGHT,
                     font_size=FONT_SIZE)
     _captcha = Captcha(_text, _txt_color, _bg_color, _font, _path,
                        max([_parents[0].generation, _parents[1].generation]) + 1)
@@ -382,7 +383,7 @@ def save_converged_population(_captchas: list[Captcha], _path: string):
     delete_files_with_extension_from_path(_path, 'png')
     for _captcha in _captchas:
         _captcha.path = _path + "_".join([_captcha.text, _captcha.txt_color, _captcha.bg_color, _captcha.font])
-        get_new_captcha(_captcha.path, text=_captcha.text, color=_captcha.txt_color, background=_captcha.bg_color,
+        get_new_captcha(_captcha.path, _no_color=1, text=_captcha.text, color=_captcha.txt_color, background=_captcha.bg_color,
                         font=_captcha.font, width=WIDTH,
                         height=HEIGHT,
                         font_size=FONT_SIZE)
@@ -588,7 +589,7 @@ if __name__ == "__main__":
                        "Gray", "LightSlateGray", "DarkGray", "Silver", "LightGray", "Gainsboro"]
     # for i in range(7, 11):
     #     get_simple_stats(retrieve_captcha_from_path("./Results/" + str(i)))
-    captchas = generate_converged_population(OCR.EASY_OCR, 30, 8, "./Results/Probabilist/4", colors_extended, fonts,
+    captchas = generate_converged_population(OCR.EASY_OCR, 30, 8, "./Results/Probabilist/5", colors_extended, fonts,
                                              CROSSCOLORVERSION.V2)
     get_simple_stats(captchas)
     # for captcha in new_list:

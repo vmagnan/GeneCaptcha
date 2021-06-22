@@ -56,7 +56,7 @@ def clear_captcha_svg_string(_string):
     return _string_remove_first_char
 
 
-def get_new_captcha(_path, /, **keywords):
+def get_new_captcha(_path, /, _no_color, **keywords):
     """
     Requête le serveur nodejs pour générer un captcha
     Exemple d'appel : get_new_captcha("./coucou"+font, text="A38hCNp8", color="green", font=font)
@@ -65,6 +65,9 @@ def get_new_captcha(_path, /, **keywords):
     :return: 0 = OK | 1 = Erreur
     """
     if len(keywords) > 0 and 'text' in keywords:
+        if _no_color == 1:
+            keywords.pop('color')
+            keywords.pop('background')
         url = "http://localhost:8080/captcha?" + urllib.parse.urlencode(keywords)
         # print(url)
         r = requests.get(url)
