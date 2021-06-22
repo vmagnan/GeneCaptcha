@@ -48,14 +48,14 @@ class Metadata:
         self.total_time = 0
         self.date = _date
 
-    def add_iteration(self, selected: int, iteration_time: float):
+    def add_iteration(self, iteration_time: float):
         """
         Append a new iteration to the attribute list called iterations
         :param selected: Number of selected individuals
         :param iteration_time: Time taken for the whole operation ==> Evaluation + Selection + Crossover(only when there are 2 individuals)
         :return:
         """
-        self.iterations.append((selected, iteration_time))
+        self.iterations.append(iteration_time)
 
     def set_total_time(self, total_time: float):
         self.total_time = total_time
@@ -202,17 +202,18 @@ def mutate_color_v1(_color_hex: string) -> string:
     return _color_hex
 
 
-def cross_color_v2(_color_1_hex: string, _color_2_hex: string, _colors: list[string]) -> string:
+def cross_color_v2(_color_1: string, _color_2: string, _colors: list[string], _forbidden_color: string = "") -> string:
     """
-    Cross colors V1
-    By taking the color with the index in the middle of the 2 parents 
-    :param _color_1_hex: First color in hexadecimal string
-    :param _color_2_hex: Second color in hexadecimal string
+    Cross colors V2
+    By taking the color with the index in the middle of the 2 parents
+    :param _color_1: First color in string
+    :param _color_2: Second color in string
     :param _colors: List of colors
+    :param _forbidden_color: Forbidden color, in order to get different color for the text and background
     :return: 
     """
-    _pos_color_1 = _colors.index(_color_1_hex)
-    _pos_color_2 = _colors.index(_color_2_hex)
+    _pos_color_1 = _colors.index(_color_1)
+    _pos_color_2 = _colors.index(_color_2)
     # We get the colors between the two index into _sub_colors
     _sub_colors = []
     for _i in range(_pos_color_1, _pos_color_2):
@@ -220,33 +221,47 @@ def cross_color_v2(_color_1_hex: string, _color_2_hex: string, _colors: list[str
     _size_sub_color = len(_sub_colors)
     # If the two colors are neighbours <==> _size_sub_color = 0, then choose randomly between the parents
     if _size_sub_color == 0:
-        return mutate_color_v2(random.choice([_color_1_hex, _color_2_hex]), _colors)
+        _return_color = mutate_color_v2(random.choice([_color_1, _color_2]), _colors)
     # Get the middle of the list
     # if length is pair there are two colors, we choose a random one between them, index len/2 or len/2 -1
-    if _size_sub_color % 2 == 0:
-        return mutate_color_v2(_sub_colors[int(_size_sub_color / 2) - random.choice([0, 1])], _colors)
+    elif _size_sub_color % 2 == 0:
+        _return_color = mutate_color_v2(_sub_colors[int(_size_sub_color / 2) - random.choice([0, 1])], _colors)
     # Otherwise it's the int part of the length divided by 2
     else:
-        return mutate_color_v2(_sub_colors[int(_size_sub_color / 2)], _colors)
+        _return_color = mutate_color_v2(_sub_colors[int(_size_sub_color / 2)], _colors)
+
+    # _return_color is returned only if != than forbidden color
+    # Otherwise : If _color_1 && _color_2 != forbidden, return random one between them
+    # Otherwise : Return the one different from forbidden
+    if _return_color != _forbidden_color:
+        return _return_color
+    else:
+        if _color_1 != _forbidden_color and _color_2 != _forbidden_color:
+            return random.choice([_color_1, _color_2])
+        else:
+            if _color_1 != _forbidden_color:
+                return _color_1
+            else:
+                return _color_2
 
 
-def mutate_color_v2(_color_hex: string, _colors: list[string]) -> string:
+def mutate_color_v2(_color: string, _colors: list[string]) -> string:
     """
     Mutate the color V2
     1/10 chance to mutate the color
     Change the color by the one before or after the actual color index in the list
-    :param _color_hex: Color to mutate
+    :param _color: Color to mutate
     :param _colors: List of colors
     :return:
     """
     if random.randint(1, 10) == 1:
-        _pos_color = _colors.index(_color_hex)
+        _pos_color = _colors.index(_color)
         _new_index_color = _pos_color + random.choice([-1, 1])
         if _new_index_color > len(_colors) - 1:
-            _color_hex = _colors[0]
+            _color = _colors[0]
         else:
-            _color_hex = _colors[_new_index_color]
-    return _color_hex
+            _color = _colors[_new_index_color]
+    return _color
 
 
 def cross_2_captcha(_parents: tuple[Captcha, Captcha], _colors: list[string],
@@ -261,7 +276,7 @@ def cross_2_captcha(_parents: tuple[Captcha, Captcha], _colors: list[string],
     _text = cross_text(_parents[0].text, _parents[1].text)
     if _cross_color_version == CROSSCOLORVERSION.V2:
         _txt_color = cross_color_v2(_parents[0].txt_color, _parents[1].txt_color, _colors)
-        _bg_color = cross_color_v2(_parents[0].bg_color, _parents[1].bg_color, _colors)
+        _bg_color = cross_color_v2(_parents[0].bg_color, _parents[1].bg_color, _colors, _txt_color)
 
     else:
         _txt_color = cross_color_v1(_parents[0].txt_color, _parents[1].txt_color)
@@ -516,8 +531,8 @@ def generate_converged_population(_ocr: OCR, _size: int, _threshold: int, _path:
     _starting_time = time.time()
     _population = initialise(_size, _colors, _fonts)
     _iterations = 0
+    _starting_time_iteration = time.time()
     while not is_population_converged(_population, _size, _threshold):
-        _starting_time_iteration = time.time()
         # Evaluate the crossed population
         evaluate(_population, _ocr, _reader)
         print("Iteration = {iter}".format(iter=_iterations))
@@ -528,8 +543,11 @@ def generate_converged_population(_ocr: OCR, _size: int, _threshold: int, _path:
         evaluate_single_captcha(_son, _ocr, _reader)
         if _son.ocr_value >= max(_c.ocr_value for _c in _parents):
             replace_worst_captcha_by_new_captcha(_population, _son)
-            print("Replaced")
-        _iterations += 1
+            print("Replaced and average values in the population is {0}".format(
+                sum(_c.ocr_value for _c in _population) / len(_population)))
+            _iterations += 1
+            _metadata.add_iteration(time.time() - _starting_time)
+            _starting_time_iteration = time.time()
     _metadata.set_total_time(time.time() - _starting_time)
     _metadata.save_as_json()
     print("""\
@@ -548,29 +566,30 @@ if __name__ == "__main__":
     #     delete_files_with_extension_from_path("./Results/" + str(i) + '/', 'json')
     fonts = get_available_fonts()
     colors = ["red", "pink", "purple", "blue", "cyan", "green", "yellow", "orange"]
-    # colors_extended = ["MediumVioletRed", "DeepPink", "PaleVioletRed", "HotPink", "LightPink", "Pink", "DarkRed", "Red",
-    #                    "Firebrick", "Crimson", "IndianRed", "LightCoral", "Salmon", "DarkSalmon", "LightSalmon",
-    #                    "OrangeRed", "Tomato", "DarkOrange", "Coral", "Orange", "DarkKhaki", "Gold", "Khaki",
-    #                    "PeachPuff", "Yellow", "PaleGoldenrod", "Moccasin", "PapayaWhip", "LightGoldenrodYellow",
-    #                    "LemonChiffon", "LightYellow", "Maroon", "Brown", "SaddleBrown", "Sienna", "Chocolate",
-    #                    "DarkGoldenrod", "Peru", "RosyBrown", "Goldenrod", "SandyBrown", "Tan", "Burlywood", "Wheat",
-    #                    "NavajoWhite", "Bisque", "BlanchedAlmond", "Cornsilk", "DarkGreen", "Green", "DarkOliveGreen",
-    #                    "ForestGreen", "SeaGreen", "Olive", "OliveDrab", "MediumSeaGreen", "LimeGreen", "Lime",
-    #                    "SpringGreen", "MediumSpringGreen", "DarkSeaGreen", "MediumAquamarine", "YellowGreen",
-    #                    "LawnGreen", "Chartreuse", "LightGreen", "GreenYellow", "PaleGreen", "Teal", "DarkCyan",
-    #                    "LightSeaGreen", "CadetBlue", "DarkTurquoise", "MediumTurquoise", "Turquoise", "Aqua", "Cyan",
-    #                    "Aquamarine", "PaleTurquoise", "LightCyan", "Navy", "DarkBlue", "MediumBlue", "Blue",
-    #                    "MidnightBlue", "RoyalBlue", "SteelBlue", "DodgerBlue", "DeepSkyBlue", "CornflowerBlue",
-    #                    "SkyBlue", "LightSkyBlue", "LightSteelBlue", "LightBlue", "PowderBlue", "Indigo", "Purple",
-    #                    "DarkMagenta", "DarkViolet", "DarkSlateBlue", "BlueViolet", "DarkOrchid", "Fuchsia", "Magenta",
-    #                    "SlateBlue", "MediumSlateBlue", "MediumOrchid", "MediumPurple", "Orchid", "Violet", "Plum",
-    #                    "Thistle", "Lavender", "MistyRose", "AntiqueWhite", "Linen", "Beige", "WhiteSmoke",
-    #                    "LavenderBlush", "OldLace", "AliceBlue", "Seashell", "GhostWhite", "Honeydew", "FloralWhite",
-    #                    "Azure", "MintCream", "Snow", "Ivory", "White", "Black", "DarkSlateGray", "DimGray", "SlateGray",
-    #                    "Gray", "LightSlateGray", "DarkGray", "Silver", "LightGray", "Gainsboro"]
+    colors_extended = ["MediumVioletRed", "DeepPink", "PaleVioletRed", "HotPink", "LightPink", "Pink", "DarkRed", "Red",
+                       "Firebrick", "Crimson", "IndianRed", "LightCoral", "Salmon", "DarkSalmon", "LightSalmon",
+                       "OrangeRed", "Tomato", "DarkOrange", "Coral", "Orange", "DarkKhaki", "Gold", "Khaki",
+                       "PeachPuff", "Yellow", "PaleGoldenrod", "Moccasin", "PapayaWhip", "LightGoldenrodYellow",
+                       "LemonChiffon", "LightYellow", "Maroon", "Brown", "SaddleBrown", "Sienna", "Chocolate",
+                       "DarkGoldenrod", "Peru", "RosyBrown", "Goldenrod", "SandyBrown", "Tan", "Burlywood", "Wheat",
+                       "NavajoWhite", "Bisque", "BlanchedAlmond", "Cornsilk", "DarkGreen", "Green", "DarkOliveGreen",
+                       "ForestGreen", "SeaGreen", "Olive", "OliveDrab", "MediumSeaGreen", "LimeGreen", "Lime",
+                       "SpringGreen", "MediumSpringGreen", "DarkSeaGreen", "MediumAquamarine", "YellowGreen",
+                       "LawnGreen", "Chartreuse", "LightGreen", "GreenYellow", "PaleGreen", "Teal", "DarkCyan",
+                       "LightSeaGreen", "CadetBlue", "DarkTurquoise", "MediumTurquoise", "Turquoise", "Aqua", "Cyan",
+                       "Aquamarine", "PaleTurquoise", "LightCyan", "Navy", "DarkBlue", "MediumBlue", "Blue",
+                       "MidnightBlue", "RoyalBlue", "SteelBlue", "DodgerBlue", "DeepSkyBlue", "CornflowerBlue",
+                       "SkyBlue", "LightSkyBlue", "LightSteelBlue", "LightBlue", "PowderBlue", "Indigo", "Purple",
+                       "DarkMagenta", "DarkViolet", "DarkSlateBlue", "BlueViolet", "DarkOrchid", "Fuchsia", "Magenta",
+                       "SlateBlue", "MediumSlateBlue", "MediumOrchid", "MediumPurple", "Orchid", "Violet", "Plum",
+                       "Thistle", "Lavender", "MistyRose", "AntiqueWhite", "Linen", "Beige", "WhiteSmoke",
+                       "LavenderBlush", "OldLace", "AliceBlue", "Seashell", "GhostWhite", "Honeydew", "FloralWhite",
+                       "Azure", "MintCream", "Snow", "Ivory", "White", "Black", "DarkSlateGray", "DimGray", "SlateGray",
+                       "Gray", "LightSlateGray", "DarkGray", "Silver", "LightGray", "Gainsboro"]
     # for i in range(7, 11):
     #     get_simple_stats(retrieve_captcha_from_path("./Results/" + str(i)))
-    captchas = generate_converged_population(OCR.EASY_OCR, 40, 8, "./Results/Probabilist/1", colors, fonts, CROSSCOLORVERSION.V2)
+    captchas = generate_converged_population(OCR.EASY_OCR, 30, 8, "./Results/Probabilist/4", colors_extended, fonts,
+                                             CROSSCOLORVERSION.V2)
     get_simple_stats(captchas)
     # for captcha in new_list:
     #     print(captcha.ocr_value)

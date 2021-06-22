@@ -1,0 +1,34 @@
+{
+    "ocr": "EASY_OCR",
+    "size": 10,
+    "threshold": 8,
+    "path": "./Results/Probabilist/2/",
+    "colors": [
+        "red",
+        "pink",
+        "purple",
+        "blue",
+        "cyan",
+        "green",
+        "yellow",
+        "orange"
+    ],
+    "fonts": [
+        "comic-sans-ms.ttf",
+        "DancingScript-VariableFont-wght.ttf",
+        "Duke-Charming DEMO.otf",
+        "GROBOLD.ttf",
+        "Kawaii-Stitch.ttf",
+        "LEMONMILK-Bold.otf",
+        "LEMONMILK-BoldItalic.otf",
+        "LEMONMILK-Light.otf",
+        "LEMONMILK-LightItalic.otf",
+        "LEMONMILK-Medium.otf",
+        "LEMONMILK-MediumItalic.otf",
+        "LEMONMILK-Regular.otf",
+        "LEMONMILK-RegularItalic.otf"
+    ],
+    "iterations": [],
+    "total_time": 34.739747285842896,
+    "date": "2021-06-22 21:40:53.263245"
+}
