@@ -1,5 +1,6 @@
 import json
 import time
+import textwrap
 from datetime import datetime
 
 from colorutils import *
@@ -23,6 +24,26 @@ class CROSSCOLORVERSION(Enum):
     V2 = 'V2'
 
 
+class Stats:
+    def __init__(self, characters_apparition, fonts_apparition, txt_color_apparition, bg_color_apparition):
+        self.characters_apparition = characters_apparition
+        self.fonts_apparition = fonts_apparition
+        self.txt_color_apparition = txt_color_apparition
+        self.bg_color_apparition = bg_color_apparition
+
+    def print_stats(self):
+        print(textwrap.dedent("""\
+            ----------------------------------------------------
+            Characters apparition : {chs}
+            Fonts apparition : {fts}
+            Text-Color apparition : {txtcos}
+            Background-Color apparition : {bgcos}
+            ----------------------------------------------------""".format(chs=self.characters_apparition,
+                                                                           fts=self.fonts_apparition,
+                                                                           txtcos=self.txt_color_apparition,
+                                                                           bgcos=self.bg_color_apparition)))
+
+
 class Captcha:
     def __init__(self, text, txt_color, bg_color, font, path, generation):
         self.text = text
@@ -36,17 +57,17 @@ class Captcha:
 
 
 class Metadata:
-    def __init__(self, _ocr: string, _size: int, _threshold: int, _path: string, _colors: list[string],
-                 _fonts: list[string], _date: string):
-        self.ocr = _ocr
-        self.size = _size
-        self.threshold = _threshold
-        self.path = _path
-        self.colors = _colors
-        self.fonts = _fonts
+    def __init__(self, **kwargs):
+        self.ocr = kwargs.get('ocr')
+        self.size = kwargs.get('size')
+        self.threshold = kwargs.get('threshold')
+        self.path = kwargs.get('path')
+        self.colors = kwargs.get('colors')
+        self.fonts = kwargs.get('fonts')
         self.iterations = []
         self.total_time = 0
-        self.date = _date
+        self.date = kwargs.get('date')
+        self.stats = None
 
     def add_iteration(self, mean_values: float, iteration_time: float):
         """
@@ -70,6 +91,28 @@ class Metadata:
             path = self.path
         with open(path + 'metadata.json', 'w', encoding='utf-8') as file:
             json.dump(self.__dict__, file, ensure_ascii=False, indent=4, default=str)
+
+    def load_from_json(self, path):
+        """
+        Save all attributes as JSON
+        :param path: Path to the directory where to save the JSON
+        :return: Nothing
+        """
+        with open(path + 'metadata.json', 'r', encoding='utf-8') as file:
+            json_object = json.load(file)
+            for k in json_object.keys():
+                if k == 'ocr':
+                    if json_object[k] == 'EASY_OCR':
+                        self.__dict__[k] = OCR.EASY_OCR
+                    else:
+                        self.__dict__[k] = OCR.TESSERACT
+                elif k == 'stats':
+                    stats = None
+                    if len(json_object[k]) == 4:
+                        stats = Stats(json_object[k][0], json_object[k][1], json_object[k][2], json_object[k][3])
+                    self.__dict__[k] = stats
+                else:
+                    self.__dict__[k] = json_object[k]
 
 
 def initialise(_number: int, _colors: list[string], _fonts: list[string]) -> list[Captcha]:
@@ -399,11 +442,11 @@ def sort_dic_by_value_descending(_dic: dict) -> dict:
     return dict(sorted(_dic.items(), key=lambda item: item[1], reverse=True))
 
 
-def get_simple_stats(_captchas: list[Captcha]):
+def get_simple_stats(_captchas: list[Captcha]) -> Stats:
     """
     Print the occurrence of each captcha parameter : Letter, text color, background color, font
     :param _captchas: List of captchas
-    :return: Nothing
+    :return: Stats object
     """
     _characters_apparition = {}
     _fonts_apparition = {}
@@ -436,17 +479,9 @@ def get_simple_stats(_captchas: list[Captcha]):
     _fonts_apparition = sort_dic_by_value_descending(_fonts_apparition)
     _txt_color_apparition = sort_dic_by_value_descending(_txt_color_apparition)
     _bg_color_apparition = sort_dic_by_value_descending(_bg_color_apparition)
-    print("""\
-    ----------------------------------------------------
-    Number of captchas : {nb}
-    Characters apparition : {chs}
-    Fonts apparition : {fts}
-    Text-Color apparition : {txtcos}
-    Background-Color apparition : {bgcos}
-    ----------------------------------------------------""".format(nb=len(_captchas), chs=_characters_apparition,
-                                                                   fts=_fonts_apparition,
-                                                                   txtcos=_txt_color_apparition,
-                                                                   bgcos=_bg_color_apparition))
+    _stats = Stats(_characters_apparition, _fonts_apparition, _txt_color_apparition, _bg_color_apparition)
+    _stats.print_stats()
+    return _stats
 
 
 def summarize(_captchas: list[Captcha], _data_dict):
@@ -492,6 +527,20 @@ def retrieve_captcha_from_path(_path: string) -> list[Captcha]:
     return _captchas
 
 
+def retrieve_metadata_from_path(_path: string) -> Metadata:
+    """
+    Retrieve the list of captcha located in a specific path
+    :param _path: Path
+    :return: List of captchas
+    """
+    # Add '/' at the end of the path when missing
+    if _path[-1] != '/':
+        _path = _path + '/'
+    _metadata = Metadata()
+    _metadata.load_from_json(_path)
+    return _metadata
+
+
 def replace_worst_captcha_by_new_captcha(_captchas: list[Captcha], _new_captcha: Captcha):
     i = 0
     _worst_index = 0
@@ -529,7 +578,7 @@ def generate_converged_population(_ocr: OCR, _size: int, _threshold: int, _path:
     if _path[-1] != '/':
         _path = _path + '/'
     # Initialize metadata
-    _metadata = Metadata(_ocr.value, _size, _threshold, _path, _colors, _fonts, datetime.now())
+    _metadata = Metadata(ocr=_ocr.value, size=_size, threshold=_threshold, path=_path, colors=_colors, fonts=_fonts, date=datetime.now())
     _starting_time = time.time()
     _population = initialise(_size, _colors, _fonts)
     _iterations = 0
@@ -551,6 +600,7 @@ def generate_converged_population(_ocr: OCR, _size: int, _threshold: int, _path:
             _metadata.add_iteration(mean_ocr_value, time.time() - _starting_time_iteration)
             _starting_time_iteration = time.time()
     _metadata.set_total_time(time.time() - _starting_time)
+    _metadata.stats = get_simple_stats(_population)
     _metadata.save_as_json()
     print("""\
     Convergence of the population :
@@ -566,7 +616,7 @@ if __name__ == "__main__":
     # for i in range(25,30):
     #     delete_files_with_extension_from_path("./Results/" + str(i) + '/', 'png')
     #     delete_files_with_extension_from_path("./Results/" + str(i) + '/', 'json')
-    fonts = get_available_fonts()
+    # fonts = get_available_fonts()
     colors = ["red", "pink", "purple", "blue", "cyan", "green", "yellow", "orange"]
     colors_extended = ["MediumVioletRed", "DeepPink", "PaleVioletRed", "HotPink", "LightPink", "Pink", "DarkRed", "Red",
                        "Firebrick", "Crimson", "IndianRed", "LightCoral", "Salmon", "DarkSalmon", "LightSalmon",
@@ -589,8 +639,10 @@ if __name__ == "__main__":
                        "Azure", "MintCream", "Snow", "Ivory", "White", "Black", "DarkSlateGray", "DimGray", "SlateGray",
                        "Gray", "LightSlateGray", "DarkGray", "Silver", "LightGray", "Gainsboro"]
     # for i in range(7, 11):
-    get_simple_stats(retrieve_captcha_from_path("./Results/Probabilist/5"))
-    # captchas = generate_converged_population(OCR.EASY_OCR, 30, 8, "./Results/Probabilist/5", colors_extended, fonts,
+    # retrieve_captcha_from_path("./Results/Probabilist/5")
+    metadata = retrieve_metadata_from_path("./Results/Probabilist/6")
+    metadata.stats.print_stats()
+    # captchas = generate_converged_population(OCR.EASY_OCR, 15, 5, "./Results/Probabilist/6", colors_extended, fonts,
     #                                          CROSSCOLORVERSION.V2)
     # get_simple_stats(captchas)
     # for captcha in new_list:
