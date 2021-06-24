@@ -48,14 +48,14 @@ class Metadata:
         self.total_time = 0
         self.date = _date
 
-    def add_iteration(self, iteration_time: float):
+    def add_iteration(self, mean_values: float, iteration_time: float):
         """
         Append a new iteration to the attribute list called iterations
-        :param selected: Number of selected individuals
+        :param mean_values: Number of selected individuals
         :param iteration_time: Time taken for the whole operation ==> Evaluation + Selection + Crossover(only when there are 2 individuals)
         :return:
         """
-        self.iterations.append(iteration_time)
+        self.iterations.append((mean_values, iteration_time))
 
     def set_total_time(self, total_time: float):
         self.total_time = total_time
@@ -315,7 +315,7 @@ def crossover(_captchas: list[Captcha], _population_size: int, _colors: list[str
         random.shuffle(_captchas)
         _parent_1 = _captchas.pop()
         _parent_2 = _captchas.pop()
-        _son = cross_2_captcha(_parent_1, _parent_2, _colors, _cross_color_version)
+        _son = cross_2_captcha((_parent_1, _parent_2), _colors, _cross_color_version)
         if len(_new_population) < _population_size:
             _new_population.append(_son)
     return _new_population
@@ -383,7 +383,8 @@ def save_converged_population(_captchas: list[Captcha], _path: string):
     delete_files_with_extension_from_path(_path, 'png')
     for _captcha in _captchas:
         _captcha.path = _path + "_".join([_captcha.text, _captcha.txt_color, _captcha.bg_color, _captcha.font])
-        get_new_captcha(_captcha.path, _no_color=1, text=_captcha.text, color=_captcha.txt_color, background=_captcha.bg_color,
+        get_new_captcha(_captcha.path, _no_color=1, text=_captcha.text, color=_captcha.txt_color,
+                        background=_captcha.bg_color,
                         font=_captcha.font, width=WIDTH,
                         height=HEIGHT,
                         font_size=FONT_SIZE)
@@ -544,18 +545,18 @@ def generate_converged_population(_ocr: OCR, _size: int, _threshold: int, _path:
         evaluate_single_captcha(_son, _ocr, _reader)
         if _son.ocr_value >= max(_c.ocr_value for _c in _parents):
             replace_worst_captcha_by_new_captcha(_population, _son)
-            print("Replaced and average values in the population is {0}".format(
-                sum(_c.ocr_value for _c in _population) / len(_population)))
+            mean_ocr_value = sum(_c.ocr_value for _c in _population) / len(_population)
+            print("Replaced and average values in the population is {0}".format(mean_ocr_value))
             _iterations += 1
-            _metadata.add_iteration(time.time() - _starting_time)
+            _metadata.add_iteration(mean_ocr_value, time.time() - _starting_time_iteration)
             _starting_time_iteration = time.time()
     _metadata.set_total_time(time.time() - _starting_time)
     _metadata.save_as_json()
     print("""\
     Convergence of the population :
-    Iteration required = {iter}
+    Iteration required = {nbiter}
     Time required = {time} seconds
-    """.format(iter=_iterations, time=_metadata.total_time))
+    """.format(nbiter=len(_metadata.iterations), time=_metadata.total_time))
     save_converged_population(_population, _path)
     return _population
 
@@ -588,9 +589,9 @@ if __name__ == "__main__":
                        "Azure", "MintCream", "Snow", "Ivory", "White", "Black", "DarkSlateGray", "DimGray", "SlateGray",
                        "Gray", "LightSlateGray", "DarkGray", "Silver", "LightGray", "Gainsboro"]
     # for i in range(7, 11):
-    #     get_simple_stats(retrieve_captcha_from_path("./Results/" + str(i)))
-    captchas = generate_converged_population(OCR.EASY_OCR, 30, 8, "./Results/Probabilist/5", colors_extended, fonts,
-                                             CROSSCOLORVERSION.V2)
-    get_simple_stats(captchas)
+    get_simple_stats(retrieve_captcha_from_path("./Results/Probabilist/5"))
+    # captchas = generate_converged_population(OCR.EASY_OCR, 30, 8, "./Results/Probabilist/5", colors_extended, fonts,
+    #                                          CROSSCOLORVERSION.V2)
+    # get_simple_stats(captchas)
     # for captcha in new_list:
     #     print(captcha.ocr_value)

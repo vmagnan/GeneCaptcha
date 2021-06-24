@@ -64,7 +64,9 @@ app.get('/fonts', (req, res) => {
             return res.status(404).json({})
         } else {
             files.forEach(function (file) {
-                fonts += file + "/"
+                ext = file.split(".").pop();
+                if(ext === "ttf" || ext === "otf")
+                    fonts += file + "/"
             })
             fonts = fonts.slice(0, -1)
             return res.status(200).json(fonts)
