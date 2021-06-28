@@ -116,12 +116,13 @@ class Metadata:
                     self.__dict__[k] = json_object[k]
 
 
-def initialise(_number: int, _colors: list[string], _fonts: list[string]) -> list[Captcha]:
+def initialise(_number: int, _colors: list[string], _fonts: list[string], _no_color_mode: bool) -> list[Captcha]:
     """
     Initialise N captcha, save them to ./Image and return the corresponding captcha list
     :param _number: Number of captcha
     :param _colors: Available colors
     :param _fonts: Available fonts
+    :param _no_color_mode: Captcha in black and white when activated
     :return: List of captchas
     """
     _captchas = []
@@ -133,7 +134,7 @@ def initialise(_number: int, _colors: list[string], _fonts: list[string]) -> lis
         _font = random.choice(_fonts)
         _text = get_random_string(TEXT_LENGTH)
         _path = "./Image/" + "_".join([_text, _txt_color, _bg_color, _font])
-        get_new_captcha(_path, _no_color=1, text=_text, color=_txt_color, background=_bg_color, font=_font, width=WIDTH,
+        get_new_captcha(_path, _no_color=_no_color_mode, text=_text, color=_txt_color, background=_bg_color, font=_font, width=WIDTH,
                         height=HEIGHT,
                         font_size=FONT_SIZE)
         _captchas.append(Captcha(_text, _txt_color, _bg_color, _font, _path, 0))
@@ -308,12 +309,13 @@ def mutate_color_v2(_color: string, _colors: list[string]) -> string:
     return _color
 
 
-def cross_2_captcha(_parents: tuple[Captcha, Captcha], _colors: list[string],
+def cross_2_captcha(_parents: tuple[Captcha, Captcha], _colors: list[string], _no_color_mode: bool,
                     _cross_color_version: CROSSCOLORVERSION = CROSSCOLORVERSION.V1, ) -> Captcha:
     """
     Cross 2 captcha attributes to create a new one
     :param _parents: Tuple of parents
     :param _colors: List of colors, needed in the cross_color_v2
+    :param _no_color_mode: Captcha in black and white when activated
     :param _cross_color_version: Version of crosscolor
     :return: Son captcha
     """
@@ -327,7 +329,7 @@ def cross_2_captcha(_parents: tuple[Captcha, Captcha], _colors: list[string],
         _bg_color = cross_color_v1(_parents[0].bg_color, _parents[1].bg_color)
     _font = random.choice([_parents[0].font, _parents[1].font])
     _path = "./Image/Crossed/" + "_".join([_text, _txt_color, _bg_color, _font])
-    get_new_captcha(_path, _no_color=1, text=_text, color=_txt_color, background=_bg_color, font=_font, width=WIDTH,
+    get_new_captcha(_path, _no_color=_no_color_mode, text=_text, color=_txt_color, background=_bg_color, font=_font, width=WIDTH,
                     height=HEIGHT,
                     font_size=FONT_SIZE)
     _captcha = Captcha(_text, _txt_color, _bg_color, _font, _path,
@@ -335,12 +337,13 @@ def cross_2_captcha(_parents: tuple[Captcha, Captcha], _colors: list[string],
     return _captcha
 
 
-def crossover(_captchas: list[Captcha], _population_size: int, _colors: list[string],
+def crossover(_captchas: list[Captcha], _population_size: int, _colors: list[string], _no_color_mode: bool = False,
               _cross_color_version: CROSSCOLORVERSION = CROSSCOLORVERSION.V1) -> list[Captcha]:
     """
     Shuffle the list, cross the two last captchas, add the parents and the son to the new list
     For each available couple : select 2 random captchas from the list, cross them and add the three captchas to the return list
     And then remove the 2 parents from the initial list
+    :param _no_color_mode: Captcha in black and white when activated
     :param _captchas: List of captchas
     :param _population_size: Size of the population
     :param _colors: List of colors, needed in the cross_color_v2
@@ -359,7 +362,7 @@ def crossover(_captchas: list[Captcha], _population_size: int, _colors: list[str
         random.shuffle(_captchas)
         _parent_1 = _captchas.pop()
         _parent_2 = _captchas.pop()
-        _son = cross_2_captcha((_parent_1, _parent_2), _colors, _cross_color_version)
+        _son = cross_2_captcha((_parent_1, _parent_2), _colors, _no_color_mode, _cross_color_version)
         if len(_new_population) < _population_size:
             _new_population.append(_son)
     return _new_population
@@ -416,22 +419,19 @@ def is_population_converged(_captchas: list[Captcha], _population_size: int, _th
 
 def save_converged_population(_captchas: list[Captcha], _path: string):
     """
-    Save all captchas as png to a path
+    Save all captchas as png to a path by moving them from old path to the new one
     Be careful, this function also delete the png already located to the path !
-    Idea of improvement : Only move the files, don't duplicate
     :param _captchas: List of captchas
     :param _path: Path
     :return:
     """
     # Delete previous files if exists
     delete_files_with_extension_from_path(_path, 'png')
+    delete_files_with_extension_from_path(_path, 'json')
     for _captcha in _captchas:
-        _captcha.path = _path + "_".join([_captcha.text, _captcha.txt_color, _captcha.bg_color, _captcha.font])
-        get_new_captcha(_captcha.path, _no_color=1, text=_captcha.text, color=_captcha.txt_color,
-                        background=_captcha.bg_color,
-                        font=_captcha.font, width=WIDTH,
-                        height=HEIGHT,
-                        font_size=FONT_SIZE)
+        _new_path = _path + "_".join([_captcha.text, _captcha.txt_color, _captcha.bg_color, _captcha.font])
+        os.rename(_captcha.path + ".png", _new_path + ".png")
+        _captcha.path = _new_path
 
 
 def sort_dic_by_value_descending(_dic: dict) -> dict:
@@ -564,11 +564,12 @@ def save_captcha_list_as_json(_captchas: list[Captcha], _path: string):
 
 
 def generate_converged_population(_ocr: OCR, _size: int, _threshold: int, _path: string, _colors: list[string],
-                                  _fonts: list[string],
+                                  _fonts: list[string], _no_color_mode: bool = False,
                                   _cross_color_version: CROSSCOLORVERSION = CROSSCOLORVERSION.V1) -> \
         (list[Captcha], Metadata):
     """
     Generate a converged population with a genetic algorithm
+    :param _no_color_mode: Captcha in black and white when activated
     :param _ocr: OCR you want to choose (OCR.EASY_OCR or OCR.TESSERACT)
     :param _size: Size of the population
     :param _threshold: Threshold, all captcha with their levenshtein distance >= threshold will be selected
@@ -590,7 +591,7 @@ def generate_converged_population(_ocr: OCR, _size: int, _threshold: int, _path:
     # Initialize metadata
     _metadata = Metadata(ocr=_ocr.value, size=_size, threshold=_threshold, path=_path, colors=_colors, fonts=_fonts, date=datetime.now())
     _starting_time = time.time()
-    _population = initialise(_size, _colors, _fonts)
+    _population = initialise(_size, _colors, _fonts, _no_color_mode)
     _iterations = 0
     _starting_time_iteration = time.time()
     while not is_population_converged(_population, _size, _threshold):
@@ -600,7 +601,7 @@ def generate_converged_population(_ocr: OCR, _size: int, _threshold: int, _path:
         # Select individuals accordingly to a Threshold
         _parents = selection(_population)
         # If population has totally converged, we get out of the loop
-        _son = cross_2_captcha(_parents, _colors, _cross_color_version)
+        _son = cross_2_captcha(_parents, _colors, _no_color_mode, _cross_color_version)
         evaluate_single_captcha(_son, _ocr, _reader)
         if _son.ocr_value >= max(_c.ocr_value for _c in _parents):
             replace_worst_captcha_by_new_captcha(_population, _son)
@@ -681,12 +682,13 @@ if __name__ == "__main__":
                        "LavenderBlush", "OldLace", "AliceBlue", "Seashell", "GhostWhite", "Honeydew", "FloralWhite",
                        "Azure", "MintCream", "Snow", "Ivory", "White", "Black", "DarkSlateGray", "DimGray", "SlateGray",
                        "Gray", "LightSlateGray", "DarkGray", "Silver", "LightGray", "Gainsboro"]
-    # for i in range(7, 11):
     # retrieve_captcha_from_path("./Results/Probabilist/5")
     # metadata = retrieve_metadata_from_path("./Results/Probabilist/6")
     # metadata.stats.print_stats()
-    captchas, metadata = generate_converged_population(OCR.EASY_OCR, 20, 1, "./Results/Tests/3", colors, fonts, CROSSCOLORVERSION.V2)
-    draw_occurences_donut_from_metadata(metadata)
+    for i in range(6, 11):
+        captchas, metadata = generate_converged_population(OCR.EASY_OCR, 35, 8, "./Results/Determinist/" + str(i), colors, fonts, False,
+                                                           CROSSCOLORVERSION.V2)
+        draw_occurences_donut_from_metadata(metadata)
     # get_simple_stats(captchas)
     # for captcha in new_list:
     #     print(captcha.ocr_value)

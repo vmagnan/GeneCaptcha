@@ -65,7 +65,7 @@ def get_new_captcha(_path, /, _no_color, **keywords):
     :return: 0 = OK | 1 = Erreur
     """
     if len(keywords) > 0 and 'text' in keywords:
-        if _no_color == 1:
+        if _no_color == True:
             keywords.pop('color')
             keywords.pop('background')
         url = "http://localhost:8080/captcha?" + urllib.parse.urlencode(keywords)
