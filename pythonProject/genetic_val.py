@@ -1,8 +1,9 @@
 import json
 import time
 import textwrap
-from datetime import datetime
+import matplotlib.pyplot as plt
 
+from datetime import datetime
 from colorutils import *
 from jellyfish import levenshtein_distance
 from enum import Enum
@@ -553,10 +554,19 @@ def replace_worst_captcha_by_new_captcha(_captchas: list[Captcha], _new_captcha:
     _captchas[_worst_index] = _new_captcha
 
 
+def save_captcha_list_as_json(_captchas: list[Captcha], _path: string):
+    # Add '/' at the end of the path when missing
+    if _path[-1] != '/':
+        _path = _path + '/'
+    json_string = json.dumps([_c.__dict__ for _c in _captchas])
+    with open(_path + 'captchas.json', 'w', encoding='utf-8') as file:
+        file.write(json_string)
+
+
 def generate_converged_population(_ocr: OCR, _size: int, _threshold: int, _path: string, _colors: list[string],
                                   _fonts: list[string],
                                   _cross_color_version: CROSSCOLORVERSION = CROSSCOLORVERSION.V1) -> \
-        list[Captcha]:
+        (list[Captcha], Metadata):
     """
     Generate a converged population with a genetic algorithm
     :param _ocr: OCR you want to choose (OCR.EASY_OCR or OCR.TESSERACT)
@@ -608,7 +618,40 @@ def generate_converged_population(_ocr: OCR, _size: int, _threshold: int, _path:
     Time required = {time} seconds
     """.format(nbiter=len(_metadata.iterations), time=_metadata.total_time))
     save_converged_population(_population, _path)
-    return _population
+    save_captcha_list_as_json(_population, _path)
+    return _population, _metadata
+
+
+def draw_occurences_donut_from_metadata(_metadata: Metadata):
+    _fig, ((_ax1, _ax2), (_ax3, _ax4)) = plt.subplots(2, 2)
+    _fig.suptitle("Occurences")
+    for i in range(0, 4):
+        if i == 1:
+            _dic = _metadata.stats.characters_apparition
+            _title = "Characters"
+            _ax = _ax1
+        elif i == 2:
+            _dic = _metadata.stats.fonts_apparition
+            _title = "Fonts"
+            _ax = _ax2
+        elif i == 3:
+            _dic = _metadata.stats.txt_color_apparition
+            _title = "Text Colors"
+            _ax = _ax3
+        else:
+            _dic = _metadata.stats.bg_color_apparition
+            _title = "Background Colors"
+            _ax = _ax4
+        _total_values = sum(_dic.values())
+        _sizes = []
+        _labels = _dic.keys()
+        for _l in _labels:
+            _sizes.append(_dic[_l] / _total_values)
+        _ax.pie(_sizes, labels=_labels, autopct='%1.1f%%', startangle=90, wedgeprops=dict(width=.3))
+        _ax.set_title(_title)
+        _ax.axis('equal')  # Equal aspect ratio ensures that pie is drawn as a circle.
+    plt.tight_layout()
+    plt.show()
 
 
 if __name__ == "__main__":
@@ -616,7 +659,7 @@ if __name__ == "__main__":
     # for i in range(25,30):
     #     delete_files_with_extension_from_path("./Results/" + str(i) + '/', 'png')
     #     delete_files_with_extension_from_path("./Results/" + str(i) + '/', 'json')
-    # fonts = get_available_fonts()
+    fonts = get_available_fonts()
     colors = ["red", "pink", "purple", "blue", "cyan", "green", "yellow", "orange"]
     colors_extended = ["MediumVioletRed", "DeepPink", "PaleVioletRed", "HotPink", "LightPink", "Pink", "DarkRed", "Red",
                        "Firebrick", "Crimson", "IndianRed", "LightCoral", "Salmon", "DarkSalmon", "LightSalmon",
@@ -640,10 +683,10 @@ if __name__ == "__main__":
                        "Gray", "LightSlateGray", "DarkGray", "Silver", "LightGray", "Gainsboro"]
     # for i in range(7, 11):
     # retrieve_captcha_from_path("./Results/Probabilist/5")
-    metadata = retrieve_metadata_from_path("./Results/Probabilist/6")
-    metadata.stats.print_stats()
-    # captchas = generate_converged_population(OCR.EASY_OCR, 15, 5, "./Results/Probabilist/6", colors_extended, fonts,
-    #                                          CROSSCOLORVERSION.V2)
+    # metadata = retrieve_metadata_from_path("./Results/Probabilist/6")
+    # metadata.stats.print_stats()
+    captchas, metadata = generate_converged_population(OCR.EASY_OCR, 20, 1, "./Results/Tests/3", colors, fonts, CROSSCOLORVERSION.V2)
+    draw_occurences_donut_from_metadata(metadata)
     # get_simple_stats(captchas)
     # for captcha in new_list:
     #     print(captcha.ocr_value)
