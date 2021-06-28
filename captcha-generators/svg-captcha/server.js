@@ -47,7 +47,7 @@ app.get('/captcha', (req, res) => {
     const font_size = req.query.font_size;
     const noise = req.query.noise;
     // console.log("text ="+text+"|color = "+color+"|font= "+font+"|width= "+width+"|height= "+height);
-    var captcha = generateCaptcha({ text: text, color: color, background:background, font: font, width: width, height: height, font_size: font_size, noise: noise });
+    var captcha = generateCaptcha({ text: text, color: color, background: background, font: font, width: width, height: height, font_size: font_size, noise: noise });
     if (captcha === undefined)
         return res.status(500).json({
             error: 'Requête mal formatée, le champ text n\'est pas présent.',
@@ -64,9 +64,11 @@ app.get('/fonts', (req, res) => {
             return res.status(404).json({})
         } else {
             files.forEach(function (file) {
-                ext = file.split(".").pop();
-                if(ext === "ttf" || ext === "otf")
-                    fonts += file + "/"
+                if (!file.includes("Old/")) {
+                    ext = file.split(".").pop();
+                    if (ext === "ttf" || ext === "otf")
+                        fonts += file + "/"
+                }
             })
             fonts = fonts.slice(0, -1)
             return res.status(200).json(fonts)
