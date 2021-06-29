@@ -290,7 +290,7 @@ def cross_color_v2(_color_1: string, _color_2: string, _colors: list[string], _f
                 return _color_2
 
 
-def mutate_color_v2(_color: string, _colors: list[string]) -> string:
+def mutate_color_v2(_color: string, _colors: list[string], _forbidden_color: string = "") -> string:
     """
     Mutate the color V2
     1/10 chance to mutate the color
@@ -301,11 +301,16 @@ def mutate_color_v2(_color: string, _colors: list[string]) -> string:
     """
     if random.randint(1, 10) == 1:
         _pos_color = _colors.index(_color)
-        _new_index_color = _pos_color + random.choice([-1, 1])
-        if _new_index_color > len(_colors) - 1:
-            _color = _colors[0]
-        else:
-            _color = _colors[_new_index_color]
+        # We have the index, we don't need to remember the color to mutate
+        # It's supposed to fix the problem with same color for the text and the background
+        _color = _forbidden_color
+        while _color == _forbidden_color:
+            random_number = random.choice([-1, 1])
+            _new_index_color = _pos_color + random_number
+            if _new_index_color > len(_colors) - 1:
+                _color = _colors[0]
+            else:
+                _color = _colors[_new_index_color]
     return _color
 
 
@@ -425,9 +430,6 @@ def save_converged_population(_captchas: list[Captcha], _path: string):
     :param _path: Path
     :return:
     """
-    # Delete previous files if exists
-    delete_files_with_extension_from_path(_path, 'png')
-    delete_files_with_extension_from_path(_path, 'json')
     for _captcha in _captchas:
         _new_path = _path + "_".join([_captcha.text, _captcha.txt_color, _captcha.bg_color, _captcha.font])
         os.rename(_captcha.path + ".png", _new_path + ".png")
@@ -443,7 +445,7 @@ def sort_dic_by_value_descending(_dic: dict) -> dict:
     return dict(sorted(_dic.items(), key=lambda item: item[1], reverse=True))
 
 
-def get_simple_stats(_captchas: list[Captcha]) -> Stats:
+def get_stats(_captchas: list[Captcha]) -> Stats:
     """
     Print the occurrence of each captcha parameter : Letter, text color, background color, font
     :param _captchas: List of captchas
@@ -610,9 +612,13 @@ def generate_converged_population(_ocr: OCR, _size: int, _threshold: int, _path:
             _iterations += 1
             _metadata.add_iteration(mean_ocr_value, time.time() - _starting_time_iteration)
             _starting_time_iteration = time.time()
+    # Remove all files in that path
+    delete_files_with_extension_from_path(_path, 'png')
+    delete_files_with_extension_from_path(_path, 'json')
     _metadata.set_total_time(time.time() - _starting_time)
-    _metadata.stats = get_simple_stats(_population)
-    _metadata.save_as_json()
+    # Save our new population and metadata
+    _metadata.stats = get_stats(_population)
+    _metadata.save_as_json(_path)
     print("""\
     Convergence of the population :
     Iteration required = {nbiter}
@@ -623,7 +629,7 @@ def generate_converged_population(_ocr: OCR, _size: int, _threshold: int, _path:
     return _population, _metadata
 
 
-def draw_occurences_donut_from_metadata(_metadata: Metadata):
+def draw_occurences_donut_from_metadata(_metadata: Metadata, _path):
     _fig, ((_ax1, _ax2), (_ax3, _ax4)) = plt.subplots(2, 2)
     _fig.suptitle("Occurences")
     for i in range(0, 4):
@@ -652,7 +658,10 @@ def draw_occurences_donut_from_metadata(_metadata: Metadata):
         _ax.set_title(_title)
         _ax.axis('equal')  # Equal aspect ratio ensures that pie is drawn as a circle.
     plt.tight_layout()
-    plt.show()
+    mng = plt.get_current_fig_manager()
+    mng.full_screen_toggle()
+    # plt.show()
+    plt.savefig(_path + 'occurence_donuts.png', dpi=200, bbox_inches='tight')
 
 
 if __name__ == "__main__":
@@ -685,10 +694,10 @@ if __name__ == "__main__":
     # retrieve_captcha_from_path("./Results/Probabilist/5")
     # metadata = retrieve_metadata_from_path("./Results/Probabilist/6")
     # metadata.stats.print_stats()
-    for i in range(6, 11):
-        captchas, metadata = generate_converged_population(OCR.EASY_OCR, 35, 8, "./Results/Determinist/" + str(i), colors, fonts, False,
+    for i in range(14, 21):
+        captchas, metadata = generate_converged_population(OCR.EASY_OCR, 35, 8, "./Results/Probabilist/" + str(i), colors_extended, fonts, False,
                                                            CROSSCOLORVERSION.V2)
-        draw_occurences_donut_from_metadata(metadata)
+        draw_occurences_donut_from_metadata(metadata, "./Results/Probabilist/" + str(i) + "/")
     # get_simple_stats(captchas)
     # for captcha in new_list:
     #     print(captcha.ocr_value)
