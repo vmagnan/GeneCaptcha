@@ -82,15 +82,15 @@ class Metadata:
     def set_total_time(self, total_time: float):
         self.total_time = total_time
 
-    def save_as_json(self, path=None):
+    def save_as_json(self, _path=None):
         """
         Save all attributes as JSON
-        :param path: Path to the directory where to save the JSON
+        :param _path: Path to the directory where to save the JSON
         :return: Nothing
         """
-        if path is None:
-            path = self.path
-        with open(path + 'metadata.json', 'w', encoding='utf-8') as file:
+        if _path is None:
+            _path = self.path
+        with open(_path + 'metadata.json', 'w', encoding='utf-8') as file:
             json.dump(self.__dict__, file, ensure_ascii=False, indent=4, default=str)
 
     def load_from_json(self, path):
@@ -100,20 +100,20 @@ class Metadata:
         :return: Nothing
         """
         with open(path + 'metadata.json', 'r', encoding='utf-8') as file:
-            json_object = json.load(file)
-            for k in json_object.keys():
-                if k == 'ocr':
-                    if json_object[k] == 'EASY_OCR':
-                        self.__dict__[k] = OCR.EASY_OCR
+            _json_object = json.load(file)
+            for _k in _json_object.keys():
+                if _k == 'ocr':
+                    if _json_object[_k] == 'EASY_OCR':
+                        self.__dict__[_k] = OCR.EASY_OCR
                     else:
-                        self.__dict__[k] = OCR.TESSERACT
-                elif k == 'stats':
-                    stats = None
-                    if len(json_object[k]) == 4:
-                        stats = Stats(json_object[k][0], json_object[k][1], json_object[k][2], json_object[k][3])
-                    self.__dict__[k] = stats
+                        self.__dict__[_k] = OCR.TESSERACT
+                elif _k == 'stats':
+                    _stats = None
+                    if len(_json_object[_k]) == 4:
+                        _stats = Stats(_json_object[_k][0], _json_object[_k][1], _json_object[_k][2], _json_object[_k][3])
+                    self.__dict__[_k] = _stats
                 else:
-                    self.__dict__[k] = json_object[k]
+                    self.__dict__[_k] = _json_object[_k]
 
 
 def initialise(_number: int, _colors: list[string], _fonts: list[string], _no_color_mode: bool) -> list[Captcha]:
@@ -295,6 +295,7 @@ def mutate_color_v2(_color: string, _colors: list[string], _forbidden_color: str
     Mutate the color V2
     1/10 chance to mutate the color
     Change the color by the one before or after the actual color index in the list
+    :param _forbidden_color: Forbidden color, in order to get different color for the text and background
     :param _color: Color to mutate
     :param _colors: List of colors
     :return:
@@ -522,6 +523,7 @@ def retrieve_captcha_from_path(_path: string) -> list[Captcha]:
         _path = _path + '/'
     _captchas = []
     _files = get_paths_files_with_extension_from_folder(_path, "png")
+    _files.remove(_path + 'occurence_donuts.png')
     for _file in _files:
         _file_beautified = _file.replace(".png", "").replace(_path, "").replace("/", "")
         (_text, _txt_color, _bg_color, _font) = tuple(map(str, _file_beautified.split('_')))
@@ -545,14 +547,14 @@ def retrieve_metadata_from_path(_path: string) -> Metadata:
 
 
 def replace_worst_captcha_by_new_captcha(_captchas: list[Captcha], _new_captcha: Captcha):
-    i = 0
+    _i = 0
     _worst_index = 0
     _worst_value = _captchas[0].ocr_value
     for _c in _captchas:
         if _c.ocr_value < _worst_value and _c.ocr_value != -1:
             _worst_value = _c.ocr_value
-            _worst_index = i
-        i += 1
+            _worst_index = _i
+        _i += 1
     _captchas[_worst_index] = _new_captcha
 
 
@@ -629,24 +631,49 @@ def generate_converged_population(_ocr: OCR, _size: int, _threshold: int, _path:
     return _population, _metadata
 
 
-def draw_occurences_donut_from_metadata(_metadata: Metadata, _path):
+def draw_single_donut_from_dic(_dic: dict, _path: str = None, _title: str = None):
+    _fig, _ax = plt.subplots()
+    if _title is not None:
+        _fig.suptitle(_title)
+    else:
+        _fig.suptitle("A Beautiful donut")
+    _total_values = sum(_dic.values())
+    _sizes = []
+    _labels = _dic.keys()
+    for _l in _labels:
+        _sizes.append(_dic[_l] / _total_values)
+    _ax.pie(_sizes, labels=_labels, autopct='%1.1f%%', startangle=90, wedgeprops=dict(width=.3))
+    _ax.axis('equal')  # Equal aspect ratio ensures that pie is drawn as a circle.
+    plt.tight_layout()
+    # mng = plt.get_current_fig_manager()
+    # mng.full_screen_toggle()
+    if _path is None:
+        plt.show()
+    else:
+        if _title is not None:
+            plt.savefig(_path + _title + '-donut.png', dpi=200, bbox_inches='tight')
+        else:
+            plt.savefig(_path + 'donut.png', dpi=200, bbox_inches='tight')
+
+
+def draw_occurences_donut_from_stats(_stats: Stats, _path: str = None):
     _fig, ((_ax1, _ax2), (_ax3, _ax4)) = plt.subplots(2, 2)
     _fig.suptitle("Occurences")
-    for i in range(0, 4):
-        if i == 1:
-            _dic = _metadata.stats.characters_apparition
+    for _i in range(0, 4):
+        if _i == 1:
+            _dic = stats.characters_apparition
             _title = "Characters"
             _ax = _ax1
-        elif i == 2:
-            _dic = _metadata.stats.fonts_apparition
+        elif _i == 2:
+            _dic = stats.fonts_apparition
             _title = "Fonts"
             _ax = _ax2
-        elif i == 3:
-            _dic = _metadata.stats.txt_color_apparition
+        elif _i == 3:
+            _dic = stats.txt_color_apparition
             _title = "Text Colors"
             _ax = _ax3
         else:
-            _dic = _metadata.stats.bg_color_apparition
+            _dic = stats.bg_color_apparition
             _title = "Background Colors"
             _ax = _ax4
         _total_values = sum(_dic.values())
@@ -660,8 +687,29 @@ def draw_occurences_donut_from_metadata(_metadata: Metadata, _path):
     plt.tight_layout()
     mng = plt.get_current_fig_manager()
     mng.full_screen_toggle()
-    # plt.show()
-    plt.savefig(_path + 'occurence_donuts.png', dpi=200, bbox_inches='tight')
+    if _path is None:
+        plt.show()
+    else:
+        plt.savefig(_path + 'occurence_donuts.png', dpi=200, bbox_inches='tight')
+
+
+def draw_donuts_multiple_population_from_x_to_y(x: int, y: int, _directory_captcha: str, _directory_donuts: str):
+    _all_captchas = []
+    if _directory_captcha[-1] != '/':
+        _directory_captcha = _directory_captcha + '/'
+    if _directory_donuts[-1] != '/':
+        _directory_donuts = _directory_donuts + '/'
+    for i in range(x, y + 1):
+        _captchas = retrieve_captcha_from_path(_directory_captcha + str(i))
+        _all_captchas += _captchas
+
+    stats = get_stats(_all_captchas)
+    # draw_occurences_donut_from_stats(stats, "./6-13")
+    prefix_filename_donut = _directory_donuts + "{0}-{1}".format(x, y)
+    draw_single_donut_from_dic(stats.characters_apparition, prefix_filename_donut, "Characters")
+    draw_single_donut_from_dic(stats.bg_color_apparition, prefix_filename_donut, "Background Colors")
+    draw_single_donut_from_dic(stats.txt_color_apparition, prefix_filename_donut, "Text Colors")
+    draw_single_donut_from_dic(stats.fonts_apparition, prefix_filename_donut, "Fonts")
 
 
 if __name__ == "__main__":
@@ -669,7 +717,7 @@ if __name__ == "__main__":
     # for i in range(25,30):
     #     delete_files_with_extension_from_path("./Results/" + str(i) + '/', 'png')
     #     delete_files_with_extension_from_path("./Results/" + str(i) + '/', 'json')
-    fonts = get_available_fonts()
+    # fonts = get_available_fonts()
     colors = ["red", "pink", "purple", "blue", "cyan", "green", "yellow", "orange"]
     colors_extended = ["MediumVioletRed", "DeepPink", "PaleVioletRed", "HotPink", "LightPink", "Pink", "DarkRed", "Red",
                        "Firebrick", "Crimson", "IndianRed", "LightCoral", "Salmon", "DarkSalmon", "LightSalmon",
@@ -691,13 +739,14 @@ if __name__ == "__main__":
                        "LavenderBlush", "OldLace", "AliceBlue", "Seashell", "GhostWhite", "Honeydew", "FloralWhite",
                        "Azure", "MintCream", "Snow", "Ivory", "White", "Black", "DarkSlateGray", "DimGray", "SlateGray",
                        "Gray", "LightSlateGray", "DarkGray", "Silver", "LightGray", "Gainsboro"]
+
     # retrieve_captcha_from_path("./Results/Probabilist/5")
     # metadata = retrieve_metadata_from_path("./Results/Probabilist/6")
     # metadata.stats.print_stats()
-    for i in range(14, 21):
-        captchas, metadata = generate_converged_population(OCR.EASY_OCR, 35, 8, "./Results/Probabilist/" + str(i), colors_extended, fonts, False,
-                                                           CROSSCOLORVERSION.V2)
-        draw_occurences_donut_from_metadata(metadata, "./Results/Probabilist/" + str(i) + "/")
-    # get_simple_stats(captchas)
+    # for i in range(14, 21):
+    #     captchas, metadata = generate_converged_population(OCR.EASY_OCR, 35, 8, "./Results/Probabilist/" + str(i), colors_extended, fonts, False,
+    #                                                        CROSSCOLORVERSION.V2)
+    #     draw_occurences_donut_from_metadata(metadata, "./Results/Probabilist/" + str(i) + "/")
+    draw_donuts_multiple_population_from_x_to_y(14, 20, "./Results/Probabilist/", "./")
     # for captcha in new_list:
     #     print(captcha.ocr_value)
