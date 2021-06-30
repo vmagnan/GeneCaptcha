@@ -328,11 +328,15 @@ def cross_2_captcha(_parents: tuple[Captcha, Captcha], _colors: list[string], _n
     _text = cross_text(_parents[0].text, _parents[1].text)
     if _cross_color_version == CROSSCOLORVERSION.V2:
         _txt_color = cross_color_v2(_parents[0].txt_color, _parents[1].txt_color, _colors)
-        _bg_color = cross_color_v2(_parents[0].bg_color, _parents[1].bg_color, _colors, _txt_color)
+        _bg_color = _txt_color
+        while _bg_color == _txt_color:
+            _bg_color = cross_color_v2(_parents[0].bg_color, _parents[1].bg_color, _colors, _txt_color)
 
     else:
         _txt_color = cross_color_v1(_parents[0].txt_color, _parents[1].txt_color)
-        _bg_color = cross_color_v1(_parents[0].bg_color, _parents[1].bg_color)
+        _bg_color = _txt_color
+        while _bg_color == _txt_color:
+            _bg_color = cross_color_v1(_parents[0].bg_color, _parents[1].bg_color)
     _font = random.choice([_parents[0].font, _parents[1].font])
     _path = "./Image/Crossed/" + "_".join([_text, _txt_color, _bg_color, _font])
     get_new_captcha(_path, _no_color=_no_color_mode, text=_text, color=_txt_color, background=_bg_color, font=_font, width=WIDTH,
@@ -661,19 +665,19 @@ def draw_occurences_donut_from_stats(_stats: Stats, _path: str = None):
     _fig.suptitle("Occurences")
     for _i in range(0, 4):
         if _i == 1:
-            _dic = stats.characters_apparition
+            _dic = _stats.characters_apparition
             _title = "Characters"
             _ax = _ax1
         elif _i == 2:
-            _dic = stats.fonts_apparition
+            _dic = _stats.fonts_apparition
             _title = "Fonts"
             _ax = _ax2
         elif _i == 3:
-            _dic = stats.txt_color_apparition
+            _dic = _stats.txt_color_apparition
             _title = "Text Colors"
             _ax = _ax3
         else:
-            _dic = stats.bg_color_apparition
+            _dic = _stats.bg_color_apparition
             _title = "Background Colors"
             _ax = _ax4
         _total_values = sum(_dic.values())
@@ -712,12 +716,22 @@ def draw_donuts_multiple_population_from_x_to_y(x: int, y: int, _directory_captc
     draw_single_donut_from_dic(stats.fonts_apparition, prefix_filename_donut, "Fonts")
 
 
+def generate_populations_from_x_to_y(_x: int, _y: int, _ocr: OCR, _size: int, _threshold: int, _path: string, _colors: list[string],
+                                     _fonts: list[string], _no_color_mode: bool = False,
+                                     _cross_color_version: CROSSCOLORVERSION = CROSSCOLORVERSION.V1):
+    for i in range(_x, _y + 1):
+        _captchas, _metadata = generate_converged_population(_ocr, _size, _threshold, _path + str(i), _colors, _fonts,
+                                                             _no_color_mode,
+                                                             _cross_color_version.V2)
+        draw_occurences_donut_from_stats(_metadata.stats, _path + str(i) + "/")
+
+
 if __name__ == "__main__":
     # Pour supprimer rapidement les images/json de certains dossiers
     # for i in range(25,30):
     #     delete_files_with_extension_from_path("./Results/" + str(i) + '/', 'png')
     #     delete_files_with_extension_from_path("./Results/" + str(i) + '/', 'json')
-    # fonts = get_available_fonts()
+    fonts = get_available_fonts()
     colors = ["red", "pink", "purple", "blue", "cyan", "green", "yellow", "orange"]
     colors_extended = ["MediumVioletRed", "DeepPink", "PaleVioletRed", "HotPink", "LightPink", "Pink", "DarkRed", "Red",
                        "Firebrick", "Crimson", "IndianRed", "LightCoral", "Salmon", "DarkSalmon", "LightSalmon",
@@ -743,10 +757,12 @@ if __name__ == "__main__":
     # retrieve_captcha_from_path("./Results/Probabilist/5")
     # metadata = retrieve_metadata_from_path("./Results/Probabilist/6")
     # metadata.stats.print_stats()
+    # generate_populations_from_x_to_y(21, 30, OCR.EASY_OCR, 35, 8, "./Results/Probabilist/", colors, fonts, False,
+    #                                  CROSSCOLORVERSION.V2)
     # for i in range(14, 21):
     #     captchas, metadata = generate_converged_population(OCR.EASY_OCR, 35, 8, "./Results/Probabilist/" + str(i), colors_extended, fonts, False,
     #                                                        CROSSCOLORVERSION.V2)
     #     draw_occurences_donut_from_metadata(metadata, "./Results/Probabilist/" + str(i) + "/")
-    draw_donuts_multiple_population_from_x_to_y(14, 20, "./Results/Probabilist/", "./")
+    draw_donuts_multiple_population_from_x_to_y(21, 30, "./Results/Probabilist/", "./")
     # for captcha in new_list:
     #     print(captcha.ocr_value)
