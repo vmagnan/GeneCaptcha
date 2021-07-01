@@ -25,12 +25,26 @@ class CROSSCOLORVERSION(Enum):
     V2 = 'V2'
 
 
+class ComplexEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if hasattr(obj, 'repr_json'):
+            return obj.repr_json()
+        elif isinstance(obj,datetime):
+            return str(obj)
+        else:
+            return json.JSONEncoder.default(self, obj)
+
+
 class Stats:
     def __init__(self, characters_apparition, fonts_apparition, txt_color_apparition, bg_color_apparition):
         self.characters_apparition = characters_apparition
         self.fonts_apparition = fonts_apparition
         self.txt_color_apparition = txt_color_apparition
         self.bg_color_apparition = bg_color_apparition
+
+    def repr_json(self):
+        return dict(characters_apparition=self.characters_apparition, fonts_apparition=self.fonts_apparition,
+                    txt_color_apparition=self.txt_color_apparition, bg_color_apparition=self.bg_color_apparition)
 
     def print_stats(self):
         print(textwrap.dedent("""\
@@ -82,6 +96,11 @@ class Metadata:
     def set_total_time(self, total_time: float):
         self.total_time = total_time
 
+    def repr_json(self):
+        return dict(stats=self.stats, ocr=self.ocr, size=self.size, threshold=self.threshold, path=self.path,
+                    colors=self.colors,
+                    fonts=self.fonts, iterations=self.iterations, total_time=self.total_time, date=self.date)
+
     def save_as_json(self, _path=None):
         """
         Save all attributes as JSON
@@ -91,7 +110,9 @@ class Metadata:
         if _path is None:
             _path = self.path
         with open(_path + 'metadata.json', 'w', encoding='utf-8') as file:
-            json.dump(self.__dict__, file, ensure_ascii=False, indent=4, default=str)
+            data = json.dumps(self.repr_json(), ensure_ascii=False, indent=4, cls=ComplexEncoder)
+            print(data)
+            file.write(data)
 
     def load_from_json(self, path):
         """
@@ -99,6 +120,7 @@ class Metadata:
         :param path: Path to the directory where to save the JSON
         :return: Nothing
         """
+        path = add_trailing_slash_to_path(path)
         with open(path + 'metadata.json', 'r', encoding='utf-8') as file:
             _json_object = json.load(file)
             for _k in _json_object.keys():
@@ -110,7 +132,8 @@ class Metadata:
                 elif _k == 'stats':
                     _stats = None
                     if len(_json_object[_k]) == 4:
-                        _stats = Stats(_json_object[_k][0], _json_object[_k][1], _json_object[_k][2], _json_object[_k][3])
+                        _stats = Stats(_json_object[_k]['characters_apparition'], _json_object[_k]['fonts_apparition'],
+                                       _json_object[_k]['txt_color_apparition'], _json_object[_k]['bg_color_apparition'])
                     self.__dict__[_k] = _stats
                 else:
                     self.__dict__[_k] = _json_object[_k]
@@ -523,8 +546,7 @@ def retrieve_captcha_from_path(_path: string) -> list[Captcha]:
     :return: List of captchas
     """
     # Add '/' at the end of the path when missing
-    if _path[-1] != '/':
-        _path = _path + '/'
+    _path = add_trailing_slash_to_path(_path)
     _captchas = []
     _files = get_paths_files_with_extension_from_folder(_path, "png")
     _files.remove(_path + 'occurence_donuts.png')
@@ -543,8 +565,7 @@ def retrieve_metadata_from_path(_path: string) -> Metadata:
     :return: List of captchas
     """
     # Add '/' at the end of the path when missing
-    if _path[-1] != '/':
-        _path = _path + '/'
+    _path = add_trailing_slash_to_path(_path)
     _metadata = Metadata()
     _metadata.load_from_json(_path)
     return _metadata
@@ -563,9 +584,7 @@ def replace_worst_captcha_by_new_captcha(_captchas: list[Captcha], _new_captcha:
 
 
 def save_captcha_list_as_json(_captchas: list[Captcha], _path: string):
-    # Add '/' at the end of the path when missing
-    if _path[-1] != '/':
-        _path = _path + '/'
+    _path = add_trailing_slash_to_path(_path)
     json_string = json.dumps([_c.__dict__ for _c in _captchas])
     with open(_path + 'captchas.json', 'w', encoding='utf-8') as file:
         file.write(json_string)
@@ -593,9 +612,7 @@ def generate_converged_population(_ocr: OCR, _size: int, _threshold: int, _path:
     # Initialize EasyOCR Reader if it's the chosen one
     if _ocr == OCR.EASY_OCR:
         _reader = easyocr.Reader(['en'])
-    # Add '/' at the end of the path when missing
-    if _path[-1] != '/':
-        _path = _path + '/'
+    _path = add_trailing_slash_to_path(_path)
     # Initialize metadata
     _metadata = Metadata(ocr=_ocr.value, size=_size, threshold=_threshold, path=_path, colors=_colors, fonts=_fonts, date=datetime.now())
     _starting_time = time.time()
@@ -699,10 +716,8 @@ def draw_occurences_donut_from_stats(_stats: Stats, _path: str = None):
 
 def draw_donuts_multiple_population_from_x_to_y(x: int, y: int, _directory_captcha: str, _directory_donuts: str):
     _all_captchas = []
-    if _directory_captcha[-1] != '/':
-        _directory_captcha = _directory_captcha + '/'
-    if _directory_donuts[-1] != '/':
-        _directory_donuts = _directory_donuts + '/'
+    _directory_captcha = add_trailing_slash_to_path(_directory_captcha)
+    _directory_donuts = add_trailing_slash_to_path(_directory_donuts)
     for i in range(x, y + 1):
         _captchas = retrieve_captcha_from_path(_directory_captcha + str(i))
         _all_captchas += _captchas
@@ -727,11 +742,6 @@ def generate_populations_from_x_to_y(_x: int, _y: int, _ocr: OCR, _size: int, _t
 
 
 if __name__ == "__main__":
-    # Pour supprimer rapidement les images/json de certains dossiers
-    # for i in range(25,30):
-    #     delete_files_with_extension_from_path("./Results/" + str(i) + '/', 'png')
-    #     delete_files_with_extension_from_path("./Results/" + str(i) + '/', 'json')
-    fonts = get_available_fonts()
     colors = ["red", "pink", "purple", "blue", "cyan", "green", "yellow", "orange"]
     colors_extended = ["MediumVioletRed", "DeepPink", "PaleVioletRed", "HotPink", "LightPink", "Pink", "DarkRed", "Red",
                        "Firebrick", "Crimson", "IndianRed", "LightCoral", "Salmon", "DarkSalmon", "LightSalmon",
@@ -753,16 +763,13 @@ if __name__ == "__main__":
                        "LavenderBlush", "OldLace", "AliceBlue", "Seashell", "GhostWhite", "Honeydew", "FloralWhite",
                        "Azure", "MintCream", "Snow", "Ivory", "White", "Black", "DarkSlateGray", "DimGray", "SlateGray",
                        "Gray", "LightSlateGray", "DarkGray", "Silver", "LightGray", "Gainsboro"]
-
-    # retrieve_captcha_from_path("./Results/Probabilist/5")
-    # metadata = retrieve_metadata_from_path("./Results/Probabilist/6")
-    # metadata.stats.print_stats()
-    # generate_populations_from_x_to_y(21, 30, OCR.EASY_OCR, 35, 8, "./Results/Probabilist/", colors, fonts, False,
-    #                                  CROSSCOLORVERSION.V2)
-    # for i in range(14, 21):
-    #     captchas, metadata = generate_converged_population(OCR.EASY_OCR, 35, 8, "./Results/Probabilist/" + str(i), colors_extended, fonts, False,
-    #                                                        CROSSCOLORVERSION.V2)
-    #     draw_occurences_donut_from_metadata(metadata, "./Results/Probabilist/" + str(i) + "/")
-    draw_donuts_multiple_population_from_x_to_y(21, 30, "./Results/Probabilist/", "./")
-    # for captcha in new_list:
-    #     print(captcha.ocr_value)
+    # metadata = Metadata()
+    # metadata.load_from_json("./Results/Tests/5")
+    # print("coucou")
+    fonts = get_available_fonts()
+    start = 5
+    end = 5
+    directory = "Tests"
+    generate_populations_from_x_to_y(start, end, OCR.EASY_OCR, 35, 0, "./Results/"+directory+"/", colors_extended, fonts, False,
+                                     CROSSCOLORVERSION.V2)
+    # draw_donuts_multiple_population_from_x_to_y(start, end, "./Results/Tests/", "./")
