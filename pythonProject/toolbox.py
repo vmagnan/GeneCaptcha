@@ -131,6 +131,13 @@ def get_string_ocr_easyocr(_image_path, _reader):
     return ""
 
 
+def add_trailing_slash_to_path(_path) -> str:
+    # Add '/' at the end of the path when missing
+    if _path[-1] != '/':
+        _path = _path + '/'
+    return _path
+
+
 if __name__ == "__main__":
     fonts = get_available_fonts()
     captchas = []
