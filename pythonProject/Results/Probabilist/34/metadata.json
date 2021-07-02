@@ -1,0 +1,420 @@
+{
+    "stats": {
+        "characters_apparition": {
+            "X": 29,
+            "8": 21,
+            "D": 20,
+            "6": 18,
+            "e": 14,
+            "l": 14,
+            "C": 12,
+            "n": 12,
+            "2": 12,
+            "7": 12,
+            "N": 11,
+            "O": 10,
+            "q": 10,
+            "c": 10,
+            "K": 8,
+            "r": 8,
+            "p": 7,
+            "d": 6,
+            "o": 6,
+            "H": 5,
+            "L": 4,
+            "9": 4,
+            "J": 4,
+            "E": 4,
+            "S": 3,
+            "U": 3,
+            "Z": 3,
+            "G": 2,
+            "R": 2,
+            "f": 2,
+            "F": 1,
+            "5": 1,
+            "V": 1,
+            "1": 1
+        },
+        "fonts_apparition": {
+            "DancingScript-VariableFont-wght.ttf": 9,
+            "comic-sans-ms.ttf": 8,
+            "SweetChiliDemo.ttf": 8,
+            "Montserrat-Medium.otf": 5,
+            "GROBOLD.ttf": 4,
+            "Duke-Charming DEMO.otf": 1
+        },
+        "txt_color_apparition": {
+            "Snow": 5,
+            "Ivory": 4,
+            "LightSkyBlue": 3,
+            "Azure": 3,
+            "Seashell": 3,
+            "MintCream": 2,
+            "Linen": 2,
+            "FloralWhite": 2,
+            "GhostWhite": 2,
+            "Green": 2,
+            "Aqua": 1,
+            "SteelBlue": 1,
+            "SlateBlue": 1,
+            "BlueViolet": 1,
+            "MediumTurquoise": 1,
+            "DarkOliveGreen": 1,
+            "DarkMagenta": 1
+        },
+        "bg_color_apparition": {
+            "LemonChiffon": 16,
+            "LightYellow": 5,
+            "Chartreuse": 3,
+            "Brown": 2,
+            "Peru": 1,
+            "MediumAquamarine": 1,
+            "Olive": 1,
+            "LightGoldenrodYellow": 1,
+            "Cornsilk": 1,
+            "DarkOliveGreen": 1,
+            "DarkSeaGreen": 1,
+            "DarkOrchid": 1,
+            "DarkGreen": 1
+        }
+    },
+    "ocr": "EASY_OCR",
+    "size": 35,
+    "threshold": 8,
+    "path": "./Results/Probabilist/34/",
+    "colors": [
+        "MediumVioletRed",
+        "DeepPink",
+        "PaleVioletRed",
+        "HotPink",
+        "LightPink",
+        "Pink",
+        "DarkRed",
+        "Red",
+        "Firebrick",
+        "Crimson",
+        "IndianRed",
+        "LightCoral",
+        "Salmon",
+        "DarkSalmon",
+        "LightSalmon",
+        "OrangeRed",
+        "Tomato",
+        "DarkOrange",
+        "Coral",
+        "Orange",
+        "DarkKhaki",
+        "Gold",
+        "Khaki",
+        "PeachPuff",
+        "Yellow",
+        "PaleGoldenrod",
+        "Moccasin",
+        "PapayaWhip",
+        "LightGoldenrodYellow",
+        "LemonChiffon",
+        "LightYellow",
+        "Maroon",
+        "Brown",
+        "SaddleBrown",
+        "Sienna",
+        "Chocolate",
+        "DarkGoldenrod",
+        "Peru",
+        "RosyBrown",
+        "Goldenrod",
+        "SandyBrown",
+        "Tan",
+        "Burlywood",
+        "Wheat",
+        "NavajoWhite",
+        "Bisque",
+        "BlanchedAlmond",
+        "Cornsilk",
+        "DarkGreen",
+        "Green",
+        "DarkOliveGreen",
+        "ForestGreen",
+        "SeaGreen",
+        "Olive",
+        "OliveDrab",
+        "MediumSeaGreen",
+        "LimeGreen",
+        "Lime",
+        "SpringGreen",
+        "MediumSpringGreen",
+        "DarkSeaGreen",
+        "MediumAquamarine",
+        "YellowGreen",
+        "LawnGreen",
+        "Chartreuse",
+        "LightGreen",
+        "GreenYellow",
+        "PaleGreen",
+        "Teal",
+        "DarkCyan",
+        "LightSeaGreen",
+        "CadetBlue",
+        "DarkTurquoise",
+        "MediumTurquoise",
+        "Turquoise",
+        "Aqua",
+        "Cyan",
+        "Aquamarine",
+        "PaleTurquoise",
+        "LightCyan",
+        "Navy",
+        "DarkBlue",
+        "MediumBlue",
+        "Blue",
+        "MidnightBlue",
+        "RoyalBlue",
+        "SteelBlue",
+        "DodgerBlue",
+        "DeepSkyBlue",
+        "CornflowerBlue",
+        "SkyBlue",
+        "LightSkyBlue",
+        "LightSteelBlue",
+        "LightBlue",
+        "PowderBlue",
+        "Indigo",
+        "Purple",
+        "DarkMagenta",
+        "DarkViolet",
+        "DarkSlateBlue",
+        "BlueViolet",
+        "DarkOrchid",
+        "Fuchsia",
+        "Magenta",
+        "SlateBlue",
+        "MediumSlateBlue",
+        "MediumOrchid",
+        "MediumPurple",
+        "Orchid",
+        "Violet",
+        "Plum",
+        "Thistle",
+        "Lavender",
+        "MistyRose",
+        "AntiqueWhite",
+        "Linen",
+        "Beige",
+        "WhiteSmoke",
+        "LavenderBlush",
+        "OldLace",
+        "AliceBlue",
+        "Seashell",
+        "GhostWhite",
+        "Honeydew",
+        "FloralWhite",
+        "Azure",
+        "MintCream",
+        "Snow",
+        "Ivory",
+        "White",
+        "Black",
+        "DarkSlateGray",
+        "DimGray",
+        "SlateGray",
+        "Gray",
+        "LightSlateGray",
+        "DarkGray",
+        "Silver",
+        "LightGray",
+        "Gainsboro"
+    ],
+    "fonts": [
+        "comic-sans-ms.ttf",
+        "DancingScript-VariableFont-wght.ttf",
+        "Duke-Charming DEMO.otf",
+        "GROBOLD.ttf",
+        "Montserrat-Medium.otf",
+        "SweetChiliDemo.ttf"
+    ],
+    "iterations": [
+        [
+            2.8,
+            28.629271507263184
+        ],
+        [
+            3.0285714285714285,
+            4.95596718788147
+        ],
+        [
+            3.257142857142857,
+            2.504185676574707
+        ],
+        [
+            3.4285714285714284,
+            0.8578553199768066
+        ],
+        [
+            3.657142857142857,
+            1.6799914836883545
+        ],
+        [
+            3.8857142857142857,
+            0.8670094013214111
+        ],
+        [
+            4.0285714285714285,
+            2.461933135986328
+        ],
+        [
+            4.171428571428572,
+            0.8307304382324219
+        ],
+        [
+            4.228571428571429,
+            7.425642013549805
+        ],
+        [
+            4.428571428571429,
+            9.605693340301514
+        ],
+        [
+            4.6,
+            5.828003168106079
+        ],
+        [
+            4.771428571428571,
+            1.7100086212158203
+        ],
+        [
+            4.942857142857143,
+            9.04398798942566
+        ],
+        [
+            5.171428571428572,
+            2.4680817127227783
+        ],
+        [
+            5.2,
+            4.092195510864258
+        ],
+        [
+            5.257142857142857,
+            4.802947759628296
+        ],
+        [
+            5.314285714285714,
+            0.8032441139221191
+        ],
+        [
+            5.4,
+            3.2319483757019043
+        ],
+        [
+            5.542857142857143,
+            4.8794262409210205
+        ],
+        [
+            5.6,
+            5.662731647491455
+        ],
+        [
+            5.714285714285714,
+            4.048542737960815
+        ],
+        [
+            5.857142857142857,
+            7.28498649597168
+        ],
+        [
+            6.0,
+            4.8538572788238525
+        ],
+        [
+            6.142857142857143,
+            3.301945924758911
+        ],
+        [
+            6.285714285714286,
+            1.6286969184875488
+        ],
+        [
+            6.428571428571429,
+            2.512613534927368
+        ],
+        [
+            6.542857142857143,
+            2.4572739601135254
+        ],
+        [
+            6.6571428571428575,
+            3.2605338096618652
+        ],
+        [
+            6.771428571428571,
+            2.506265640258789
+        ],
+        [
+            6.885714285714286,
+            1.6909804344177246
+        ],
+        [
+            7.0,
+            1.7097070217132568
+        ],
+        [
+            7.114285714285714,
+            0.8812441825866699
+        ],
+        [
+            7.2,
+            2.544950485229492
+        ],
+        [
+            7.285714285714286,
+            3.3250186443328857
+        ],
+        [
+            7.371428571428571,
+            1.7432739734649658
+        ],
+        [
+            7.457142857142857,
+            3.331178665161133
+        ],
+        [
+            7.542857142857143,
+            4.963398694992065
+        ],
+        [
+            7.628571428571429,
+            8.549308061599731
+        ],
+        [
+            7.714285714285714,
+            0.8777871131896973
+        ],
+        [
+            7.8,
+            3.350879669189453
+        ],
+        [
+            7.885714285714286,
+            0.8920884132385254
+        ],
+        [
+            7.942857142857143,
+            1.6986029148101807
+        ],
+        [
+            8.0,
+            2.4785616397857666
+        ],
+        [
+            8.028571428571428,
+            1.6583786010742188
+        ],
+        [
+            8.057142857142857,
+            0.8689517974853516
+        ]
+    ],
+    "total_time": 175.5873086452484,
+    "date": "2021-07-01 23:15:54.292923"
+}

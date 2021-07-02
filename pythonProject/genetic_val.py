@@ -29,7 +29,7 @@ class ComplexEncoder(json.JSONEncoder):
     def default(self, obj):
         if hasattr(obj, 'repr_json'):
             return obj.repr_json()
-        elif isinstance(obj,datetime):
+        elif isinstance(obj, datetime):
             return str(obj)
         else:
             return json.JSONEncoder.default(self, obj)
@@ -767,9 +767,15 @@ if __name__ == "__main__":
     # metadata.load_from_json("./Results/Tests/5")
     # print("coucou")
     fonts = get_available_fonts()
-    start = 5
-    end = 5
-    directory = "Tests"
-    generate_populations_from_x_to_y(start, end, OCR.EASY_OCR, 35, 0, "./Results/"+directory+"/", colors_extended, fonts, False,
+    # Colors extended from 31 to 38
+    start = 31
+    end = 38
+    directory = "Probabilist"
+    generate_populations_from_x_to_y(start, end, OCR.EASY_OCR, 35, 8, "./Results/" + directory + "/", colors_extended, fonts, False,
                                      CROSSCOLORVERSION.V2)
-    # draw_donuts_multiple_population_from_x_to_y(start, end, "./Results/Tests/", "./")
+    draw_donuts_multiple_population_from_x_to_y(start, end, "./Results/" + directory + "/", "./")
+    # Black & White from 39 to 50
+    start = 39
+    end = 50
+    generate_populations_from_x_to_y(start, end, OCR.EASY_OCR, 35, 8, "./Results/" + directory + "/", colors_extended, fonts, True)
+    draw_donuts_multiple_population_from_x_to_y(start, end, "./Results/" + directory + "/", "./")
