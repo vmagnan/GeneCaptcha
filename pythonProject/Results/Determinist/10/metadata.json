@@ -1,4 +1,54 @@
 {
+    "stats": {
+        "characters_apparition": {
+            "0": 79,
+            "C": 79,
+            "M": 66,
+            "2": 62,
+            "5": 61,
+            "X": 51,
+            "o": 50,
+            "g": 49,
+            "t": 41,
+            "j": 36,
+            "D": 35,
+            "3": 29,
+            "b": 28,
+            "7": 24,
+            "y": 24,
+            "v": 17,
+            "Z": 17,
+            "F": 14,
+            "n": 8,
+            "k": 8,
+            "P": 6,
+            "e": 4,
+            "x": 3,
+            "B": 2,
+            "N": 1,
+            "T": 1,
+            "a": 1,
+            "d": 1,
+            "W": 1,
+            "6": 1,
+            "H": 1
+        },
+        "fonts_apparition": {
+            "LEMONMILK-BoldItalic.otf": 72,
+            "DancingScript-VariableFont-wght.ttf": 27,
+            "comic-sans-ms.ttf": 1
+        },
+        "txt_color_apparition": {
+            "red": 98,
+            "green": 1,
+            "orange": 1
+        },
+        "bg_color_apparition": {
+            "green": 98,
+            "red": 1,
+            "yellow": 1
+        }
+    },
     "ocr": "EASY_OCR",
     "size": 100,
     "threshold": 8,

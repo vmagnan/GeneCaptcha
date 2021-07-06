@@ -97,7 +97,7 @@ class Metadata:
         self.total_time = total_time
 
     def repr_json(self):
-        return dict(stats=self.stats, ocr=self.ocr, size=self.size, threshold=self.threshold, path=self.path,
+        return dict(stats=self.stats, ocr=self.ocr.value, size=self.size, threshold=self.threshold, path=self.path,
                     colors=self.colors,
                     fonts=self.fonts, iterations=self.iterations, total_time=self.total_time, date=self.date)
 
@@ -549,7 +549,10 @@ def retrieve_captcha_from_path(_path: string) -> list[Captcha]:
     _path = add_trailing_slash_to_path(_path)
     _captchas = []
     _files = get_paths_files_with_extension_from_folder(_path, "png")
-    _files.remove(_path + 'occurence_donuts.png')
+    try:
+        _files.remove(_path + 'occurence_donuts.png')
+    except:
+        pass
     for _file in _files:
         _file_beautified = _file.replace(".png", "").replace(_path, "").replace("/", "")
         (_text, _txt_color, _bg_color, _font) = tuple(map(str, _file_beautified.split('_')))
@@ -763,19 +766,24 @@ if __name__ == "__main__":
                        "LavenderBlush", "OldLace", "AliceBlue", "Seashell", "GhostWhite", "Honeydew", "FloralWhite",
                        "Azure", "MintCream", "Snow", "Ivory", "White", "Black", "DarkSlateGray", "DimGray", "SlateGray",
                        "Gray", "LightSlateGray", "DarkGray", "Silver", "LightGray", "Gainsboro"]
-    # metadata = Metadata()
-    # metadata.load_from_json("./Results/Tests/5")
-    # print("coucou")
-    fonts = get_available_fonts()
-    # Colors extended from 31 to 38
-    start = 31
-    end = 38
-    directory = "Probabilist"
-    generate_populations_from_x_to_y(start, end, OCR.EASY_OCR, 35, 8, "./Results/" + directory + "/", colors_extended, fonts, False,
-                                     CROSSCOLORVERSION.V2)
-    draw_donuts_multiple_population_from_x_to_y(start, end, "./Results/" + directory + "/", "./")
-    # Black & White from 39 to 50
-    start = 39
-    end = 50
-    generate_populations_from_x_to_y(start, end, OCR.EASY_OCR, 35, 8, "./Results/" + directory + "/", colors_extended, fonts, True)
-    draw_donuts_multiple_population_from_x_to_y(start, end, "./Results/" + directory + "/", "./")
+    # fonts = get_available_fonts()
+    # # Colors extended from 31 to 38
+    # start = 31
+    # end = 38
+    # directory = "Probabilist"
+    # generate_populations_from_x_to_y(start, end, OCR.EASY_OCR, 35, 8, "./Results/" + directory + "/", colors_extended, fonts, False,
+    #                                  CROSSCOLORVERSION.V2)
+    # draw_donuts_multiple_population_from_x_to_y(start, end, "./Results/" + directory + "/", "./")
+    # # Black & White from 39 to 50
+    # start = 39
+    # end = 50
+    # generate_populations_from_x_to_y(start, end, OCR.EASY_OCR, 35, 8, "./Results/" + directory + "/", colors_extended, fonts, True)
+    # draw_donuts_multiple_population_from_x_to_y(start, end, "./Results/" + directory + "/", "./")
+    for i in range(8,12):
+        path = "./Results/Determinist/"+str(i)+"/"
+        captchas = retrieve_captcha_from_path(path)
+        metadata = retrieve_metadata_from_path(path)
+        metadata.stats = get_stats(captchas)
+        metadata.save_as_json(path)
+        save_captcha_list_as_json(captchas, path)
+        draw_occurences_donut_from_stats(metadata.stats, path)

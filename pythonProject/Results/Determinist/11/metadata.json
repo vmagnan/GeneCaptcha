@@ -1,4 +1,34 @@
 {
+    "stats": {
+        "characters_apparition": {
+            "2": 11,
+            "A": 9,
+            "p": 9,
+            "J": 9,
+            "x": 7,
+            "o": 6,
+            "z": 6,
+            "M": 5,
+            "R": 4,
+            "n": 4,
+            "D": 4,
+            "y": 4,
+            "L": 2
+        },
+        "fonts_apparition": {
+            "DancingScript-VariableFont-wght.ttf": 9,
+            "comic-sans-ms.ttf": 1
+        },
+        "txt_color_apparition": {
+            "PapayaWhip": 10
+        },
+        "bg_color_apparition": {
+            "LavenderBlush": 7,
+            "Seashell": 1,
+            "Honeydew": 1,
+            "AliceBlue": 1
+        }
+    },
     "ocr": "EASY_OCR",
     "size": 10,
     "threshold": 8,
