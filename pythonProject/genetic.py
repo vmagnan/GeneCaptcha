@@ -97,7 +97,7 @@ class Metadata:
         self.total_time = total_time
 
     def repr_json(self):
-        return dict(stats=self.stats, ocr=self.ocr.value, size=self.size, threshold=self.threshold, path=self.path,
+        return dict(stats=self.stats, ocr=self.ocr, size=self.size, threshold=self.threshold, path=self.path,
                     colors=self.colors,
                     fonts=self.fonts, iterations=self.iterations, total_time=self.total_time, date=self.date)
 
@@ -777,7 +777,7 @@ if __name__ == "__main__":
     # Black & White from 39 to 50
     start = 51
     end = 51
-    generate_populations_from_x_to_y(start, end, OCR.EASY_OCR, 35, 8, "./Results/" + directory + "/", colors_extended, fonts, _no_color_mode=True)
+    generate_populations_from_x_to_y(start, end, OCR.EASY_OCR, 10, 4, "./Results/" + directory + "/", colors_extended, fonts, _no_color_mode=True)
     draw_donuts_multiple_population_from_x_to_y(start, end, "./Results/" + directory + "/", "./")
     # for i in range(8,12):
     #     path = "./Results/Determinist/"+str(i)+"/"
