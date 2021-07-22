@@ -2,7 +2,7 @@ import json
 import time
 import textwrap
 import matplotlib.pyplot as plt
-
+import webcolors
 from datetime import datetime
 from colorutils import *
 from jellyfish import levenshtein_distance
@@ -655,7 +655,7 @@ def generate_converged_population(_ocr: OCR, _size: int, _threshold: int, _path:
     return _population, _metadata
 
 
-def draw_single_donut_from_dic(_dic: dict, _path: str = None, _title: str = None):
+def draw_single_donut_from_dic(_dic: dict, _path: str = None, _title: str = None, _color: bool = False):
     _fig, _ax = plt.subplots()
     if _title is not None:
         _fig.suptitle(_title)
@@ -666,7 +666,14 @@ def draw_single_donut_from_dic(_dic: dict, _path: str = None, _title: str = None
     _labels = _dic.keys()
     for _l in _labels:
         _sizes.append(_dic[_l] / _total_values)
-    _ax.pie(_sizes, labels=_labels, autopct='%1.1f%%', startangle=90, wedgeprops=dict(width=.3))
+    _colors = None
+    if _color:
+        _colors = []
+        for _l in _labels:
+            _colors.append(webcolors.name_to_hex(_l))
+        _ax.pie(_sizes, autopct=None, startangle=90, wedgeprops=dict(width=.3), colors=_colors)
+    else:
+        _ax.pie(_sizes, labels=_labels, autopct='%1.1f%%', startangle=90, wedgeprops=dict(width=.3))
     _ax.axis('equal')  # Equal aspect ratio ensures that pie is drawn as a circle.
     plt.tight_layout()
     # mng = plt.get_current_fig_manager()
@@ -717,10 +724,11 @@ def draw_occurences_donut_from_stats(_stats: Stats, _path: str = None):
         plt.savefig(_path + 'occurence_donuts.png', dpi=200, bbox_inches='tight')
 
 
-def draw_donuts_multiple_population_from_x_to_y(x: int, y: int, _directory_captcha: str, _directory_donuts: str):
+def draw_donuts_multiple_population_from_x_to_y(x: int, y: int, _directory_captcha: str, _directory_donuts: str, _sanatize_dir_donuts:bool=True):
     _all_captchas = []
     _directory_captcha = add_trailing_slash_to_path(_directory_captcha)
-    _directory_donuts = add_trailing_slash_to_path(_directory_donuts)
+    if _sanatize_dir_donuts:
+        _directory_donuts = add_trailing_slash_to_path(_directory_donuts)
     for i in range(x, y + 1):
         _captchas = retrieve_captcha_from_path(_directory_captcha + str(i))
         _all_captchas += _captchas
@@ -729,8 +737,8 @@ def draw_donuts_multiple_population_from_x_to_y(x: int, y: int, _directory_captc
     # draw_occurences_donut_from_stats(stats, "./6-13")
     prefix_filename_donut = _directory_donuts + "{0}-{1}".format(x, y)
     draw_single_donut_from_dic(stats.characters_apparition, prefix_filename_donut, "Characters")
-    draw_single_donut_from_dic(stats.bg_color_apparition, prefix_filename_donut, "Background Colors")
-    draw_single_donut_from_dic(stats.txt_color_apparition, prefix_filename_donut, "Text Colors")
+    draw_single_donut_from_dic(stats.bg_color_apparition, prefix_filename_donut, "Background Colors", True)
+    draw_single_donut_from_dic(stats.txt_color_apparition, prefix_filename_donut, "Text Colors", True)
     draw_single_donut_from_dic(stats.fonts_apparition, prefix_filename_donut, "Fonts")
 
 
@@ -746,28 +754,52 @@ def generate_populations_from_x_to_y(_x: int, _y: int, _ocr: OCR, _size: int, _t
 
 if __name__ == "__main__":
     colors = ["red", "pink", "purple", "blue", "cyan", "green", "yellow", "orange"]
-    colors_extended = ["MediumVioletRed", "DeepPink", "PaleVioletRed", "HotPink", "LightPink", "Pink", "DarkRed", "Red",
-                       "Firebrick", "Crimson", "IndianRed", "LightCoral", "Salmon", "DarkSalmon", "LightSalmon",
-                       "OrangeRed", "Tomato", "DarkOrange", "Coral", "Orange", "DarkKhaki", "Gold", "Khaki",
-                       "PeachPuff", "Yellow", "PaleGoldenrod", "Moccasin", "PapayaWhip", "LightGoldenrodYellow",
-                       "LemonChiffon", "LightYellow", "Maroon", "Brown", "SaddleBrown", "Sienna", "Chocolate",
-                       "DarkGoldenrod", "Peru", "RosyBrown", "Goldenrod", "SandyBrown", "Tan", "Burlywood", "Wheat",
-                       "NavajoWhite", "Bisque", "BlanchedAlmond", "Cornsilk", "DarkGreen", "Green", "DarkOliveGreen",
-                       "ForestGreen", "SeaGreen", "Olive", "OliveDrab", "MediumSeaGreen", "LimeGreen", "Lime",
-                       "SpringGreen", "MediumSpringGreen", "DarkSeaGreen", "MediumAquamarine", "YellowGreen",
-                       "LawnGreen", "Chartreuse", "LightGreen", "GreenYellow", "PaleGreen", "Teal", "DarkCyan",
-                       "LightSeaGreen", "CadetBlue", "DarkTurquoise", "MediumTurquoise", "Turquoise", "Aqua", "Cyan",
-                       "Aquamarine", "PaleTurquoise", "LightCyan", "Navy", "DarkBlue", "MediumBlue", "Blue",
-                       "MidnightBlue", "RoyalBlue", "SteelBlue", "DodgerBlue", "DeepSkyBlue", "CornflowerBlue",
-                       "SkyBlue", "LightSkyBlue", "LightSteelBlue", "LightBlue", "PowderBlue", "Indigo", "Purple",
-                       "DarkMagenta", "DarkViolet", "DarkSlateBlue", "BlueViolet", "DarkOrchid", "Fuchsia", "Magenta",
-                       "SlateBlue", "MediumSlateBlue", "MediumOrchid", "MediumPurple", "Orchid", "Violet", "Plum",
-                       "Thistle", "Lavender", "MistyRose", "AntiqueWhite", "Linen", "Beige", "WhiteSmoke",
-                       "LavenderBlush", "OldLace", "AliceBlue", "Seashell", "GhostWhite", "Honeydew", "FloralWhite",
-                       "Azure", "MintCream", "Snow", "Ivory", "White", "Black", "DarkSlateGray", "DimGray", "SlateGray",
-                       "Gray", "LightSlateGray", "DarkGray", "Silver", "LightGray", "Gainsboro"]
-    fonts = get_available_fonts()
-    # Colors extended from 31 to 38
+    colors_extended = ["mediumvioletred", "deeppink", "palevioletred", "hotpink", "lightpink", "pink", "darkred", "red",
+                       "firebrick", "crimson", "indianred", "lightcoral", "salmon", "darksalmon", "lightsalmon",
+                       "orangered", "tomato", "darkorange", "coral", "orange", "darkkhaki", "gold", "khaki",
+                       "peachpuff", "yellow", "palegoldenrod", "moccasin", "papayawhip", "lightgoldenrodyellow",
+                       "lemonchiffon", "lightyellow", "maroon", "brown", "saddlebrown", "sienna", "chocolate",
+                       "darkgoldenrod", "peru", "rosybrown", "goldenrod", "sandybrown", "tan", "burlywood", "wheat",
+                       "navajowhite", "bisque", "blanchedalmond", "cornsilk", "darkgreen", "green", "darkolivegreen",
+                       "forestgreen", "seagreen", "olive", "olivedrab", "mediumseagreen", "limegreen", "lime",
+                       "springgreen", "mediumspringgreen", "darkseagreen", "mediumaquamarine", "yellowgreen",
+                       "lawngreen", "chartreuse", "lightgreen", "greenyellow", "palegreen", "teal", "darkcyan",
+                       "lightseagreen", "cadetblue", "darkturquoise", "mediumturquoise", "turquoise", "aqua", "cyan",
+                       "aquamarine", "paleturquoise", "lightcyan", "navy", "darkblue", "mediumblue", "blue",
+                       "midnightblue", "royalblue", "steelblue", "dodgerblue", "deepskyblue", "cornflowerblue",
+                       "skyblue", "lightskyblue", "lightsteelblue", "lightblue", "powderblue", "indigo", "purple",
+                       "darkmagenta", "darkviolet", "darkslateblue", "blueviolet", "darkorchid", "fuchsia", "magenta",
+                       "slateblue", "mediumslateblue", "mediumorchid", "mediumpurple", "orchid", "violet", "plum",
+                       "thistle", "lavender", "mistyrose", "antiquewhite", "linen", "beige", "whitesmoke",
+                       "lavenderblush", "oldlace", "aliceblue", "seashell", "ghostwhite", "honeydew", "floralwhite",
+                       "azure", "mintcream", "snow", "ivory", "white", "black", "darkslategray", "dimgray", "slategray",
+                       "gray", "lightslategray", "darkgray", "silver", "lightgray", "gainsboro"]
+    # for col in colors_extended:
+    #     hex = webcolors.name_to_hex(col)
+    #     print("({0},{1})".format(col,hex))
+    # for i in range(8,9):
+    #     path = "./Results/Determinist/" + str(i) + "/"
+    #     captchas = retrieve_captcha_from_path(path)
+    #     metadata = retrieve_metadata_from_path(path)
+    #     draw_single_donut_from_dic(metadata.stats.bg_color_apparition,path,"bg-color",True)
+    directory = "Probabilist"
+    start = 31
+    end = 38
+    draw_donuts_multiple_population_from_x_to_y(start, end, "./Results/" + directory + "/", "./x11-", False)
+    start = 14
+    end = 20
+    draw_donuts_multiple_population_from_x_to_y(start, end, "./Results/" + directory + "/", "./x11-", False)
+    start = 6
+    end = 13
+    draw_donuts_multiple_population_from_x_to_y(start, end, "./Results/" + directory + "/", "./rainbow-", False)
+    start = 21
+    end = 30
+    draw_donuts_multiple_population_from_x_to_y(start, end, "./Results/" + directory + "/", "./rainbow-", False)
+    start = 39
+    end = 50
+    draw_donuts_multiple_population_from_x_to_y(start, end, "./Results/" + directory + "/", "./b&w-", False)
+    # fonts = get_available_fonts()
+    # # Colors extended from 31 to 38
     # start = 31
     # end = 38
     directory = "Probabilist"
