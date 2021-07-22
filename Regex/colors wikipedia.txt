@@ -1,2 +1,0 @@
-To select only color names in https://en.wikipedia.org/wiki/Web_colors
-([^\d\W]{3,})
