@@ -766,24 +766,24 @@ if __name__ == "__main__":
                        "LavenderBlush", "OldLace", "AliceBlue", "Seashell", "GhostWhite", "Honeydew", "FloralWhite",
                        "Azure", "MintCream", "Snow", "Ivory", "White", "Black", "DarkSlateGray", "DimGray", "SlateGray",
                        "Gray", "LightSlateGray", "DarkGray", "Silver", "LightGray", "Gainsboro"]
-    # fonts = get_available_fonts()
-    # # Colors extended from 31 to 38
+    fonts = get_available_fonts()
+    # Colors extended from 31 to 38
     # start = 31
     # end = 38
-    # directory = "Probabilist"
+    directory = "Probabilist"
     # generate_populations_from_x_to_y(start, end, OCR.EASY_OCR, 35, 8, "./Results/" + directory + "/", colors_extended, fonts, False,
     #                                  CROSSCOLORVERSION.V2)
     # draw_donuts_multiple_population_from_x_to_y(start, end, "./Results/" + directory + "/", "./")
-    # # Black & White from 39 to 50
-    # start = 39
-    # end = 50
-    # generate_populations_from_x_to_y(start, end, OCR.EASY_OCR, 35, 8, "./Results/" + directory + "/", colors_extended, fonts, True)
-    # draw_donuts_multiple_population_from_x_to_y(start, end, "./Results/" + directory + "/", "./")
-    for i in range(8,12):
-        path = "./Results/Determinist/"+str(i)+"/"
-        captchas = retrieve_captcha_from_path(path)
-        metadata = retrieve_metadata_from_path(path)
-        metadata.stats = get_stats(captchas)
-        metadata.save_as_json(path)
-        save_captcha_list_as_json(captchas, path)
-        draw_occurences_donut_from_stats(metadata.stats, path)
+    # Black & White from 39 to 50
+    start = 51
+    end = 51
+    generate_populations_from_x_to_y(start, end, OCR.EASY_OCR, 35, 8, "./Results/" + directory + "/", colors_extended, fonts, _no_color_mode=True)
+    draw_donuts_multiple_population_from_x_to_y(start, end, "./Results/" + directory + "/", "./")
+    # for i in range(8,12):
+    #     path = "./Results/Determinist/"+str(i)+"/"
+    #     captchas = retrieve_captcha_from_path(path)
+    #     metadata = retrieve_metadata_from_path(path)
+    #     metadata.stats = get_stats(captchas)
+    #     metadata.save_as_json(path)
+    #     save_captcha_list_as_json(captchas, path)
+    #     draw_occurences_donut_from_stats(metadata.stats, path)
